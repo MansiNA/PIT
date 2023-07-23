@@ -62,3 +62,9 @@ INSERT INTO "CONTACT" (ID, VERSION, EMAIL,FIRST_NAME,LAST_NAME,COMPANY_ID,STATUS
 (58, 1, 'bryan.shaw@ha.ee', 'Bryan', 'Shaw', 9, 1),
 (59, 1, 'essie.adams@iliat.cw', 'Essie', 'Adams', 8, 5),
 (60, 1, 'gary.osborne@do.ga', 'Gary', 'Osborne', 7, 5);
+INSERT INTO "PRODUCT_HIERARCHIE" (ID,EXPORT_TIME_ID,MSM_TYPE, NODE, PRODUCT_NAME) VALUES
+(1, 2023, 'MSM PRE', 'Michi', 'Lotti'),
+(2, 2023, 'MSM Post', 'Judith', 'Lotti'),
+(3, 2023, 'MSM Post', 'Judith', 'Lausi'),
+(4, 2023, 'MSM PRE', 'Michi', 'Lotti'),
+(5, 2023, 'MSM Post', 'Michi', 'Lausi');
