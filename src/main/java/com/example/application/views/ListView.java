@@ -1,25 +1,20 @@
-package com.example.application.views.list;
+package com.example.application.views;
 
-import com.example.application.data.entity.Contact;
 import com.example.application.data.entity.ProductHierarchie;
 import com.example.application.data.service.MSMService;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.Image;
-import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.theme.lumo.LumoUtility.Margin;
 
+
+@Route(value="", layout = MainLayout.class)
 @PageTitle("MQ-Mapping | TEF-Control")
-@Route(value = "")
 public class ListView extends VerticalLayout {
 
     private final MSMService service;
@@ -130,9 +125,20 @@ public class ListView extends VerticalLayout {
 
         Button addProductButton = new Button("Add product");
         addProductButton.addClickListener(click -> addProduct());
-        var toolbar = new HorizontalLayout(filterText, addProductButton);
+
+
+        Button startJobButton = new Button("Start");
+        startJobButton.addClickListener(click -> startJob());
+
+        var toolbar = new HorizontalLayout(filterText, addProductButton, startJobButton);
         toolbar.addClassName("toolbar");
+
         return toolbar;
+    }
+
+    private void startJob() {
+        service.startJob("Test");
+
     }
 
 

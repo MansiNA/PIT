@@ -1,4 +1,4 @@
-package com.example.application.views.list;
+package com.example.application.views;
 
 import com.example.application.data.entity.ProductHierarchie;
 import com.vaadin.flow.component.Component;

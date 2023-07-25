@@ -2,13 +2,16 @@ package com.example.application.data.service;
 
 import com.example.application.data.entity.ProductHierarchie;
 import com.example.application.data.repository.ProductHierarchieRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public class MSMService {
-
+    @Autowired
+    private JdbcTemplate template;
 
     private final ProductHierarchieRepository productHierarchieRepository;
 
@@ -50,6 +53,10 @@ public class MSMService {
         productHierarchieRepository.save(product);
     }
 
+    public void startJob(String jobname ){
 
+        template.execute("msdb.dbo.sp_start_job @job_name=" + jobname);
+
+    }
 
 }
