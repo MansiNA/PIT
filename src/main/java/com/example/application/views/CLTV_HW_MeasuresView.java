@@ -95,11 +95,11 @@ public class CLTV_HW_MeasuresView extends VerticalLayout {
         grid.getHeaderRows().clear();
         HeaderRow headerRow = grid.appendHeaderRow();
 
-        headerRow.getCell(MonatColumn).setComponent(createFilterHeader("Monat", personFilter::setFullName));
-        headerRow.getCell(DeviceColumn).setComponent(createFilterHeader("Device", personFilter::setEmail));
-        headerRow.getCell(MeasureColumn).setComponent(createFilterHeader("Measure", personFilter::setEmail));
-        headerRow.getCell(ChannelColumn).setComponent(createFilterHeader("Channel", personFilter::setEmail));
-        headerRow.getCell(ValueColumn).setComponent(createFilterHeader("Value", personFilter::setEmail));
+        headerRow.getCell(MonatColumn).setComponent(createFilterHeader("Monat", personFilter::setMonat));
+        headerRow.getCell(DeviceColumn).setComponent(createFilterHeader("Device", personFilter::setDevice));
+        headerRow.getCell(MeasureColumn).setComponent(createFilterHeader("Measure", personFilter::setMeasure));
+        headerRow.getCell(ChannelColumn).setComponent(createFilterHeader("Channel", personFilter::setChannel));
+        headerRow.getCell(ValueColumn).setComponent(createFilterHeader("Value", personFilter::setValue));
 
 
 //        grid.asSingleSelect().addValueChangeListener(event ->
@@ -188,35 +188,52 @@ public class CLTV_HW_MeasuresView extends VerticalLayout {
         private final GridListDataView<CLTV_HW_Measures> dataView;
 
         private String monat_ID;
-        private String email;
-        private String profession;
+        private String device;
+        private String measure_Name;
+
+        private String channel;
+
+        private String value;
 
         public PersonFilter(GridListDataView<CLTV_HW_Measures> dataView) {
             this.dataView = dataView;
             this.dataView.addFilter(this::test);
         }
 
-        public void setFullName(String fullName) {
+        public void setMonat(String fullName) {
             this.monat_ID = fullName;
             this.dataView.refreshAll();
         }
 
-        public void setEmail(String email) {
-            this.email = email;
+        public void setDevice(String email) {
+            this.device = email;
             this.dataView.refreshAll();
         }
 
-        public void setProfession(String profession) {
-            this.profession = profession;
+        public void setMeasure(String profession) {
+            this.measure_Name = profession;
             this.dataView.refreshAll();
         }
+
+        public void setChannel(String profession) {
+            this.channel = profession;
+            this.dataView.refreshAll();
+        }
+        public void setValue(String profession) {
+            this.value = profession;
+            this.dataView.refreshAll();
+        }
+
+
 
         public boolean test(CLTV_HW_Measures person) {
             boolean matchesFullName = matches(person.getMonat_ID().toString(), monat_ID);
-            //boolean matchesEmail = matches(person.getEmail(), email);
-            //boolean matchesProfession = matches(person.getProfession(), profession);
+            boolean matchesDevice = matches(person.getDevice(), device);
+            boolean matchesMeasure = matches(person.getMeasure_Name(), measure_Name);
+            boolean matchesChannel = matches(person.getChannel(), channel);
+            boolean matchesValue = matches(person.getValue(), value);
 
-            return matchesFullName; //&& matchesEmail && matchesProfession;
+            return matchesFullName && matchesDevice && matchesMeasure && matchesChannel && matchesValue ;
         }
 
         private boolean matches(String value, String searchTerm) {
