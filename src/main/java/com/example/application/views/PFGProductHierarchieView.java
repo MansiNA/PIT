@@ -13,16 +13,16 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
 
-@Route(value="", layout = MainLayout.class)
-@PageTitle("MQ-Mapping | TEF-Control")
-public class MSMProductHierarchie extends VerticalLayout {
+@Route(value="PFG-Mapping", layout = MainLayout.class)
+@PageTitle("PFG-Mapping | TEF-Control")
+public class PFGProductHierarchieView extends VerticalLayout {
 
     private final MSMService service;
     Grid<ProductHierarchie> grid = new Grid<>(ProductHierarchie.class);
     TextField filterText = new TextField();
 
-    ProductForm form;
-    public MSMProductHierarchie(MSMService service) {
+    PFGProductForm form;
+    public PFGProductHierarchieView(MSMService service) {
         this.service = service;
 
         addClassName("list-view");
@@ -63,13 +63,13 @@ public class MSMProductHierarchie extends VerticalLayout {
 
     private void configureForm() {
 
-        form = new ProductForm();
+        form = new PFGProductForm();
         form.setWidth("25em");
         //form.addSaveListener(this::saveProduct);
 
-        form.addListener(ProductForm.SaveEvent.class,this::saveProduct);
-        form.addListener(ProductForm.DeleteEvent.class, this::deleteProduct);
-        form.addListener(ProductForm.CloseEvent.class, e -> closeEditor());
+        form.addListener(PFGProductForm.SaveEvent.class,this::saveProduct);
+        form.addListener(PFGProductForm.DeleteEvent.class, this::deleteProduct);
+        form.addListener(PFGProductForm.CloseEvent.class, e -> closeEditor());
 
 
         //form.addDeleteListener(this::deleteProduct);
@@ -78,22 +78,22 @@ public class MSMProductHierarchie extends VerticalLayout {
 
     }
 
-    private void saveProduct(ProductForm.SaveEvent event) {
+    private void saveProduct(PFGProductForm.SaveEvent event) {
         service.saveProduct(event.getProduct());
         updateList();
         closeEditor();
     }
 
-    private void deleteProduct(ProductForm.DeleteEvent event) {
+    private void deleteProduct(PFGProductForm.DeleteEvent event) {
         service.deleteProduct(event.getProduct());
         updateList();
         closeEditor();
     }
 
     private void configureGrid() {
-        grid.addClassNames("MSM-grid");
+        grid.addClassNames("PFG-grid");
         grid.setSizeFull();
-        grid.setColumns("msm_Type", "node", "product_name");
+        grid.setColumns("pfg_Type", "node", "product_name");
 
         grid.getColumns().forEach(col -> col.setAutoWidth(true));
 

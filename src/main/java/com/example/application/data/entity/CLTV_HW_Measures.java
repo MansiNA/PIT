@@ -14,57 +14,57 @@ public class CLTV_HW_Measures {
     private Long id;
 
     @NotEmpty
-    private Integer Monat_ID ;
+    private Integer monat_ID ;
 
     @NotEmpty
-    private String Device = "";
+    private String device = "";
 
     @NotEmpty
-    private String Measure_Name = "";
+    private String measure_Name = "";
 
     @NotEmpty
-    private String Channel = "";
+    private String channel = "";
     @NotEmpty
-    private Long Value;
+    private Long value;
 
     public Integer getMonat_ID() {
-        return Monat_ID;
+        return monat_ID;
     }
 
     public void setMonat_ID(Integer monat_ID) {
-        Monat_ID = monat_ID;
+        monat_ID = monat_ID;
     }
 
     public String getDevice() {
-        return Device;
+        return device;
     }
 
     public void setDevice(String device) {
-        Device = device;
+        device = device;
     }
 
     public String getMeasure_Name() {
-        return Measure_Name;
+        return measure_Name;
     }
 
     public void setMeasure_Name(String measure_Name) {
-        Measure_Name = measure_Name;
+        measure_Name = measure_Name;
     }
 
     public String getChannel() {
-        return Channel;
+        return channel;
     }
 
     public void setChannel(String channel) {
-        Channel = channel;
+        channel = channel;
     }
 
     public Long getValue() {
-        return Value;
+        return value;
     }
 
     public void setValue(Long value) {
-        Value = value;
+        value = value;
     }
 
     public void setId(Long id) {

@@ -31,5 +31,20 @@ public class CLTV_HW_MeasureService {
         }
     }
 
+    public List<CLTV_HW_Measures> findAllProductsbyMonat(String stringFilter) {
+
+        if (stringFilter == null || stringFilter.isEmpty()) {
+            return cLTVHwMeasuresRepository.findAll();
+        }
+
+        Integer intFilter=Integer.parseInt(stringFilter);
+
+        if (intFilter == null || intFilter==0) {
+            System.out.println("Filter ist null!!");
+            return cLTVHwMeasuresRepository.findAll();
+        } else {
+            return cLTVHwMeasuresRepository.searchMonat(intFilter);
+        }
+    }
 
 }

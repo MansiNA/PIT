@@ -15,10 +15,10 @@ import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.shared.Registration;
 
-public class ProductForm extends FormLayout {
+public class PFGProductForm extends FormLayout {
 
 
-    ComboBox<String> msm_Type = new ComboBox("MSM Type");
+    ComboBox<String> pfg_Type = new ComboBox("PFG Type");
 
     TextField product_name = new TextField("Produkt");
     TextField node = new TextField("Knoten");
@@ -31,17 +31,17 @@ public class ProductForm extends FormLayout {
     private ProductHierarchie productHierarchie;
 
     Binder<ProductHierarchie> binder = new BeanValidationBinder<>(ProductHierarchie.class);
-    public ProductForm() {
+    public PFGProductForm() {
         addClassName("product-form");
         binder.bindInstanceFields(this);
 
-        msm_Type.getItemLabelGenerator();
-        msm_Type.setItems("MSM Post", "MSM PRE");
+        pfg_Type.getItemLabelGenerator();
+        pfg_Type.setItems("PFG Post", "PFG PRE");
 
         // Optional: Setze einen Standardwert
-        msm_Type.setValue("MSM Post");
+        pfg_Type.setValue("PFG Post");
 
-        add(msm_Type,node,product_name, exportTime_id, createButtonsLayout());
+        add(pfg_Type,node,product_name, exportTime_id, createButtonsLayout());
     }
 
     public void setProduct(ProductHierarchie productHierarchie){ binder.setBean(productHierarchie);}
@@ -74,10 +74,10 @@ public class ProductForm extends FormLayout {
     }
 
     // Events
-    public static abstract class ProductFormEvent extends ComponentEvent<ProductForm> {
+    public static abstract class ProductFormEvent extends ComponentEvent<PFGProductForm> {
         private ProductHierarchie productHierarchie;
 
-        protected ProductFormEvent(ProductForm source, ProductHierarchie product) {
+        protected ProductFormEvent(PFGProductForm source, ProductHierarchie product) {
             super(source, false);
             this.productHierarchie = product;
         }
@@ -88,18 +88,18 @@ public class ProductForm extends FormLayout {
     }
 
     public static class SaveEvent extends ProductFormEvent {
-        SaveEvent(ProductForm source, ProductHierarchie productHierarchie) {super(source, productHierarchie);
+        SaveEvent(PFGProductForm source, ProductHierarchie productHierarchie) {super(source, productHierarchie);
         }
     }
 
     public static class DeleteEvent extends ProductFormEvent {
-        DeleteEvent(ProductForm source, ProductHierarchie productHierarchie) {super(source, productHierarchie);
+        DeleteEvent(PFGProductForm source, ProductHierarchie productHierarchie) {super(source, productHierarchie);
         }
 
     }
 
     public static class CloseEvent extends ProductFormEvent {
-        CloseEvent(ProductForm source) {
+        CloseEvent(PFGProductForm source) {
             super(source, null);
         }
     }

@@ -7,13 +7,13 @@ import jakarta.validation.constraints.NotEmpty;
 
 @Entity
 @Table(schema = "dbo", name = "products")
-public class ProductHierarchie {//extends AbstractEntity{
+public class ProductHierarchie {
 
     @Id
     private Long id;
 
     @NotEmpty
-    private String msm_Type = "";
+    private String pfg_Type = "";
 
     @NotEmpty
     private String node = "";
@@ -33,12 +33,12 @@ public class ProductHierarchie {//extends AbstractEntity{
         this.id = id;
     }
 
-    public String getMsm_Type() {
-        return msm_Type;
+    public String getpfg_Type() {
+        return pfg_Type;
     }
 
-    public void setMsm_Type(String msm_Type) {
-        this.msm_Type = msm_Type;
+    public void setpfg_Type(String pfg_Type) {
+        this.pfg_Type = pfg_Type;
     }
 
     public String getNode() {
