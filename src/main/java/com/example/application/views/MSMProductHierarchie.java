@@ -15,14 +15,14 @@ import com.vaadin.flow.router.Route;
 
 @Route(value="", layout = MainLayout.class)
 @PageTitle("MQ-Mapping | TEF-Control")
-public class ListView extends VerticalLayout {
+public class MSMProductHierarchie extends VerticalLayout {
 
     private final MSMService service;
     Grid<ProductHierarchie> grid = new Grid<>(ProductHierarchie.class);
     TextField filterText = new TextField();
 
     ProductForm form;
-    public ListView(MSMService service) {
+    public MSMProductHierarchie(MSMService service) {
         this.service = service;
 
         addClassName("list-view");

@@ -2,9 +2,11 @@ package com.example.application.data.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotEmpty;
 
 @Entity
+@Table(schema = "dbo", name = "products")
 public class ProductHierarchie {//extends AbstractEntity{
 
     @Id
