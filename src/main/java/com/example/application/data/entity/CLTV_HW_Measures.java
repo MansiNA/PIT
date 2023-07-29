@@ -59,12 +59,12 @@ public class CLTV_HW_Measures {
         channel = channel;
     }
 
-    public Long getValue() {
-        return value;
+    public String getValue() {
+        return value.toString();
     }
 
-    public void setValue(Long value) {
-        value = value;
+    public void setValue(String value) {
+        value = String.valueOf(Long.valueOf(value));
     }
 
     public void setId(Long id) {
