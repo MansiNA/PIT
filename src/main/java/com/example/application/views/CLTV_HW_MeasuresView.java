@@ -16,11 +16,17 @@ import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.richtexteditor.RichTextEditor;
+import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.wontlost.ckeditor.Config;
+import com.wontlost.ckeditor.Constants;
+import com.wontlost.ckeditor.VaadinCKEditor;
+import com.wontlost.ckeditor.VaadinCKEditorBuilder;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -56,6 +62,9 @@ public class CLTV_HW_MeasuresView extends VerticalLayout {
 //
         updateList();
 //        closeEditor();
+
+
+
 
     }
 

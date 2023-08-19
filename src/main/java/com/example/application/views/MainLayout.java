@@ -19,7 +19,7 @@ public class MainLayout extends AppLayout {
     }
 
     private void createHeader() {
-        H1 logo = new H1("Controlling Admin & Configuration Tool");
+        H1 logo = new H1("PIT - Project-Information-Tool");
         logo.addClassNames(
                 LumoUtility.FontSize.LARGE,
                 LumoUtility.Margin.MEDIUM);
@@ -42,8 +42,8 @@ public class MainLayout extends AppLayout {
     private void createDrawer() {
 
         addToDrawer(new VerticalLayout(
-                new RouterLink("PFG-ProductMapping", PFGProductHierarchieView.class),
-                new RouterLink("HW_Mapping", CLTV_HW_MeasuresView.class)//,
+                new RouterLink("PFG-Cube", PFGCubeView.class),
+                new RouterLink("HW_Cube", CLTV_HW_MeasuresView.class)//,
              //   new RouterLink("Dashboard", DashboardView.class)
         ));
 
