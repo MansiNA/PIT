@@ -11,6 +11,7 @@ import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.tabs.Tab;
@@ -57,7 +58,11 @@ public class PFGCubeView extends VerticalLayout {
         editBtn.setVisible(true);
 
         HorizontalLayout hl = new HorizontalLayout();
-        hl.add(getTabsheet(),saveBtn,editBtn);
+     //   hl.add(getTabsheet(),saveBtn,editBtn);
+        hl.add(getTabsheet());
+
+        hl.setHeightFull();
+        hl.setSizeFull();
 
         add(hl);
 
@@ -71,6 +76,7 @@ public class PFGCubeView extends VerticalLayout {
 
         //TabSheet tabSheet = new TabSheet();
 
+        //Edit-Button nur im Tab Description anzeigen:
         tabSheet.addSelectedChangeListener(e->{
 
             if (e.getSelectedTab().getLabel().contains("Description"))
@@ -111,10 +117,19 @@ public class PFGCubeView extends VerticalLayout {
         tabSheet.add("DB-Jobs",  new Div(new Text("This is the Job-Info/Execution tab")));
         tabSheet.add("QS",  new Div(new Text("This is the QS tab content")));
 
+
         tabSheet.setSizeFull();
         tabSheet.setHeightFull();
 
         return tabSheet;
+
+    }
+
+    private Span createBadge(int value) {
+        Span badge = new Span(String.valueOf(value));
+        badge.getElement().getThemeList().add("badge small contrast");
+        badge.getStyle().set("margin-inline-start", "var(--lumo-space-xs)");
+        return badge;
     }
 
     private VerticalLayout getPFGDescription() {
@@ -139,7 +154,7 @@ public class PFGCubeView extends VerticalLayout {
 
         editor.setReadOnly(true);
 
-        content.add(editor);
+        content.add(editor,editBtn,saveBtn);
 
         Long id = 1L;
         Optional<KnowledgeBase> kb = knowledgeBaseService.findById(id);
@@ -182,10 +197,9 @@ public class PFGCubeView extends VerticalLayout {
 
     }
 
-    private VerticalLayout getPFGMapping() {
+    private Component getPFGMapping() {
 
         VerticalLayout vl = new VerticalLayout();
-        vl.add(getToolbar());
 
         HorizontalLayout content = new HorizontalLayout(grid, form);
         content.setFlexGrow(2,grid);
@@ -193,7 +207,9 @@ public class PFGCubeView extends VerticalLayout {
         content.addClassName("content");
         content.setSizeFull();
         content.setHeightFull();
-        vl.add(content);
+
+        vl.add(getToolbar(),content);
+
         vl.setSizeFull();
         vl.setHeightFull();
 
@@ -233,6 +249,7 @@ public class PFGCubeView extends VerticalLayout {
     private void configureGrid() {
         grid.addClassNames("PFG-grid");
         grid.setSizeFull();
+        grid.setHeightFull();
         grid.setColumns("pfg_Type", "node", "product_name");
 
         grid.getColumns().forEach(col -> col.setAutoWidth(true));
@@ -290,7 +307,7 @@ public class PFGCubeView extends VerticalLayout {
 //        startJobButton.addClickListener(click -> startJob());
 
   //      var toolbar = new HorizontalLayout(filterText, addProductButton, startJobButton);
-        var toolbar = new HorizontalLayout(filterText, addProductButton);
+        HorizontalLayout toolbar = new HorizontalLayout(filterText, addProductButton);
         toolbar.addClassName("toolbar");
 
         return toolbar;
