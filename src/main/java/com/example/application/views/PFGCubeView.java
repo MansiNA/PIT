@@ -136,6 +136,12 @@ public class PFGCubeView extends VerticalLayout {
 
         VerticalLayout content = new VerticalLayout();
 
+        Button changeReadonlyMode = new Button("change readonly mode");
+
+        changeReadonlyMode.addClickListener((event -> {
+            editor.setReadOnlyWithToolbarAction(!editor.isReadOnly());
+        }));
+
         Config config = new Config();
         config.setBalloonToolBar(Constants.Toolbar.values());
         config.setImage(new String[][]{},
@@ -145,16 +151,20 @@ public class PFGCubeView extends VerticalLayout {
                         "imageStyle:full",
                         "imageStyle:alignCenter",
                         "imageStyle:alignRight"}, new String[]{});
+
         editor = new VaadinCKEditorBuilder().with(builder -> {
 
-            builder.editorType = Constants.EditorType.BALLOON;
-            builder.width = "100%";
+            builder.editorType = Constants.EditorType.CLASSIC;
+            builder.width = "95%";
+            builder.readOnly = true;
+            builder.hideToolbar=true;
             builder.config = config;
         }).createVaadinCKEditor();
 
         editor.setReadOnly(true);
 
-        content.add(editor,editBtn,saveBtn);
+
+        content.add(changeReadonlyMode,editor,editBtn,saveBtn);
 
         Long id = 1L;
         Optional<KnowledgeBase> kb = knowledgeBaseService.findById(id);
