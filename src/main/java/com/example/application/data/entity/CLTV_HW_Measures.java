@@ -11,7 +11,7 @@ public class CLTV_HW_Measures {
 
 
     @Id
-    private Long id;
+    private Integer id;
 
     @NotEmpty
     private Integer monat_ID ;
@@ -26,6 +26,15 @@ public class CLTV_HW_Measures {
     private String channel = "";
     @NotEmpty
     private Long value;
+
+    public CLTV_HW_Measures(Integer id, Integer monat_ID, String device, String measure_Name, String channel, Long value) {
+        this.id = id;
+        this.monat_ID = monat_ID;
+        this.device = device;
+        this.measure_Name = measure_Name;
+        this.channel = channel;
+        this.value = value;
+    }
 
     public Integer getMonat_ID() {
         return monat_ID;
@@ -67,11 +76,11 @@ public class CLTV_HW_Measures {
         value = String.valueOf(Long.valueOf(value));
     }
 
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 }
