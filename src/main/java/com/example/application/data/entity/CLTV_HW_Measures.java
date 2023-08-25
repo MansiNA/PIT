@@ -36,6 +36,10 @@ public class CLTV_HW_Measures {
         this.value = value;
     }
 
+    public CLTV_HW_Measures() {
+
+    }
+
     public Integer getMonat_ID() {
         return monat_ID;
     }

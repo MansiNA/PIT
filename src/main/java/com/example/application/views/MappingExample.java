@@ -1,6 +1,7 @@
 package com.example.application.views;
 
 import com.example.application.data.entity.CLTV_HW_Measures;
+import com.example.application.data.entity.CLTV_HW_MeasuresDataProvider;
 import com.example.application.data.entity.Person;
 import com.example.application.data.entity.PersonDataProvider;
 import com.vaadin.flow.component.crud.BinderCrudEditor;
@@ -32,17 +33,19 @@ import static org.apache.commons.lang3.StringUtils.valueOf;
 @PageTitle("Mapping-Example | TEF-Control")
 public class MappingExample extends VerticalLayout {
 
-    private Crud<Person> crud;
+    private Crud<CLTV_HW_Measures> crud;
 
-    private String FIRST_NAME = "firstName";
-    private String LAST_NAME = "lastName";
-//    private String EMAIL = "email";
+    private String MONAT_ID = "monat_ID";
+    private String DEVICE = "device";
+    private String MEASURE_NAME = "measure_Name";
+    private String CHANNEL = "channel";
+    private String VALUE = "value";
 //    private String PROFESSION = "profession";
     private String EDIT_COLUMN = "vaadin-crud-edit-column";
 
     public MappingExample() {
 
-        crud = new Crud<>(Person.class, createEditor());
+        crud = new Crud<>(CLTV_HW_Measures.class, createEditor());
 
         setupGrid();
         setupDataProvider();
@@ -52,30 +55,35 @@ public class MappingExample extends VerticalLayout {
     }
 
 
-    private CrudEditor<Person> createEditor() {
-        TextField firstName = new TextField("First name");
-        TextField lastName = new TextField("Last name");
-        EmailField email = new EmailField("Email");
-        TextField profession = new TextField("Profession");
-        FormLayout form = new FormLayout(firstName, lastName, email,
-                profession);
+    private CrudEditor<CLTV_HW_Measures> createEditor() {
+        TextField monat_ID = new TextField("Monat");
+        TextField device = new TextField("Device");
+        TextField measure_Name = new TextField("Measure");
+        TextField channel = new TextField("Channel");
+        TextField value = new TextField("Wert");
 
-        Binder<Person> binder = new Binder<>(Person.class);
-        binder.forField(firstName).asRequired().bind(Person::getFirstName,
-                Person::setFirstName);
-        binder.forField(lastName).asRequired().bind(Person::getLastName,
-                Person::setLastName);
+        FormLayout form = new FormLayout(monat_ID, device, measure_Name,
+                channel, value);
 
+        Binder<CLTV_HW_Measures> binder = new Binder<>(CLTV_HW_Measures.class);
+        binder.forField(measure_Name).asRequired().bind(CLTV_HW_Measures::getMeasure_Name,
+                CLTV_HW_Measures::setMeasure_Name);
+        binder.forField(device).asRequired().bind(CLTV_HW_Measures::getDevice,
+                CLTV_HW_Measures::setDevice);
+        binder.forField(channel).asRequired().bind(CLTV_HW_Measures::getChannel,
+                CLTV_HW_Measures::setChannel);
+        binder.forField(value).asRequired().bind(CLTV_HW_Measures::getValue,
+                CLTV_HW_Measures::setValue);
 
         return new BinderCrudEditor<>(binder, form);
     }
 
     private void setupGrid() {
-        Grid<Person> grid = crud.getGrid();
+        Grid<CLTV_HW_Measures> grid = crud.getGrid();
 
         // Only show these columns (all columns shown by default):
      //   List<String> visibleColumns = Arrays.asList(FIRST_NAME, LAST_NAME, EMAIL, PROFESSION, EDIT_COLUMN);
-        List<String> visibleColumns = Arrays.asList(FIRST_NAME, LAST_NAME, EDIT_COLUMN);
+        List<String> visibleColumns = Arrays.asList(MONAT_ID, DEVICE, MEASURE_NAME, CHANNEL, VALUE, EDIT_COLUMN);
         grid.getColumns().forEach(column -> {
             String key = column.getKey();
             if (!visibleColumns.contains(key)) {
@@ -83,16 +91,18 @@ public class MappingExample extends VerticalLayout {
             }
         });
 
+
         // Reorder the columns (alphabetical by default)
-        grid.setColumnOrder(grid.getColumnByKey(FIRST_NAME),
-                grid.getColumnByKey(LAST_NAME),
-             //   grid.getColumnByKey(EMAIL),
-           //     grid.getColumnByKey(PROFESSION),
-                grid.getColumnByKey(EDIT_COLUMN));
+        grid.setColumnOrder(grid.getColumnByKey(MONAT_ID), grid.getColumnByKey(DEVICE), grid.getColumnByKey(MEASURE_NAME), grid.getColumnByKey(CHANNEL), grid.getColumnByKey(VALUE), grid.getColumnByKey(EDIT_COLUMN));
+
+
+
+
+
     }
 
     private void setupDataProvider() {
-        PersonDataProvider dataProvider = new PersonDataProvider();
+        CLTV_HW_MeasuresDataProvider dataProvider = new CLTV_HW_MeasuresDataProvider();
         crud.setDataProvider(dataProvider);
         crud.addDeleteListener(
                 deleteEvent -> dataProvider.delete(deleteEvent.getItem()));
