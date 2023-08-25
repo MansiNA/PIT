@@ -1,5 +1,7 @@
 package com.example.application.data.entity;
 
+import com.example.application.data.repository.CLTV_HW_MeasuresRepository;
+import com.example.application.data.service.CLTV_HW_MeasureService;
 import com.vaadin.flow.component.crud.CrudFilter;
 import com.vaadin.flow.data.provider.AbstractBackEndDataProvider;
 import com.vaadin.flow.data.provider.Query;
@@ -20,15 +22,32 @@ import static java.util.stream.Collectors.toList;
 public class CLTV_HW_MeasuresDataProvider  extends AbstractBackEndDataProvider<CLTV_HW_Measures, CrudFilter> {
 
     // A real app should hook up something like JPA
-    final List<CLTV_HW_Measures> DATABASE = createPersonList();
+
 
     private static final String[] FIRSTS = {"James", "Mary", "John", "Patricia", "Robert", "Jennifer"};
     private static final String[] LASTS = {"Smith", "Johnson", "Williams", "Brown"};
+    private static CLTV_HW_MeasureService cltvHwMeasureService;
+
+    final List<CLTV_HW_Measures> DATABASE;
+
+    public CLTV_HW_MeasuresDataProvider(CLTV_HW_MeasureService cltvHwMeasureService) {
+        System.out.println("Im Construktor von CLTV_HW_MeasuresDataProvider...");
+        this.cltvHwMeasureService = cltvHwMeasureService;
+        DATABASE = createPersonList();
+    }
+
+
+
     private static List<CLTV_HW_Measures> createPersonList() {
-        return IntStream
-                .rangeClosed(1, 50)
-                .mapToObj(i -> new CLTV_HW_Measures(i, 20230106, "Device A", "Measure B", "Channel XY", 3L ))
-                .collect(toList());
+        //return IntStream
+        //        .rangeClosed(1, 50)
+        //        .mapToObj(i -> new CLTV_HW_Measures(i, 20230106, "Device A", "Measure B", "Channel XY", 3L ))
+        //        .collect(toList());
+
+        List<CLTV_HW_Measures> xx = cltvHwMeasureService.findAllProducts("");
+
+        return xx;
+
     }
 
 

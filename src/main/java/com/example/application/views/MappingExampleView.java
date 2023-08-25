@@ -2,37 +2,25 @@ package com.example.application.views;
 
 import com.example.application.data.entity.CLTV_HW_Measures;
 import com.example.application.data.entity.CLTV_HW_MeasuresDataProvider;
-import com.example.application.data.entity.Person;
-import com.example.application.data.entity.PersonDataProvider;
+import com.example.application.data.service.CLTV_HW_MeasureService;
 import com.vaadin.flow.component.crud.BinderCrudEditor;
 import com.vaadin.flow.component.crud.Crud;
 import com.vaadin.flow.component.crud.CrudEditor;
-import com.vaadin.flow.component.crud.CrudFilter;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.provider.AbstractBackEndDataProvider;
-import com.vaadin.flow.data.provider.Query;
-import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
-import java.lang.reflect.Field;
 import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
-
-import static java.util.Comparator.naturalOrder;
-import static org.apache.commons.lang3.StringUtils.valueOf;
 
 @Route(value="MappingExample", layout = MainLayout.class)
 @PageTitle("Mapping-Example | TEF-Control")
-public class MappingExample extends VerticalLayout {
+public class MappingExampleView extends VerticalLayout {
 
+    private final CLTV_HW_MeasureService cltvHwMeasureService;
     private Crud<CLTV_HW_Measures> crud;
 
     private String MONAT_ID = "monat_ID";
@@ -43,7 +31,8 @@ public class MappingExample extends VerticalLayout {
 //    private String PROFESSION = "profession";
     private String EDIT_COLUMN = "vaadin-crud-edit-column";
 
-    public MappingExample() {
+    public MappingExampleView(CLTV_HW_MeasureService cltvHwMeasureService) {
+        this.cltvHwMeasureService = cltvHwMeasureService;
 
         crud = new Crud<>(CLTV_HW_Measures.class, createEditor());
 
@@ -102,7 +91,7 @@ public class MappingExample extends VerticalLayout {
     }
 
     private void setupDataProvider() {
-        CLTV_HW_MeasuresDataProvider dataProvider = new CLTV_HW_MeasuresDataProvider();
+        CLTV_HW_MeasuresDataProvider dataProvider = new CLTV_HW_MeasuresDataProvider(cltvHwMeasureService);
         crud.setDataProvider(dataProvider);
         crud.addDeleteListener(
                 deleteEvent -> dataProvider.delete(deleteEvent.getItem()));
