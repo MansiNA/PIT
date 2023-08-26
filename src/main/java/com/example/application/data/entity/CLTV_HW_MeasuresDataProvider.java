@@ -31,7 +31,7 @@ public class CLTV_HW_MeasuresDataProvider  extends AbstractBackEndDataProvider<C
     final List<CLTV_HW_Measures> DATABASE;
 
     public CLTV_HW_MeasuresDataProvider(CLTV_HW_MeasureService cltvHwMeasureService) {
-        System.out.println("Im Construktor von CLTV_HW_MeasuresDataProvider...");
+        //System.out.println("Im Construktor von CLTV_HW_MeasuresDataProvider...");
         this.cltvHwMeasureService = cltvHwMeasureService;
         DATABASE = createPersonList();
     }
@@ -135,7 +135,9 @@ public class CLTV_HW_MeasuresDataProvider  extends AbstractBackEndDataProvider<C
                     .orElse(0) + 1);
         }
 
-        final Optional<CLTV_HW_Measures> existingItem = find(item.getId());
+        cltvHwMeasureService.update(item,item.getValue());
+
+/*        final Optional<CLTV_HW_Measures> existingItem = find(item.getId());
         if (existingItem.isPresent()) {
             int position = DATABASE.indexOf(existingItem.get());
             DATABASE.remove(existingItem.get());
@@ -143,6 +145,8 @@ public class CLTV_HW_MeasuresDataProvider  extends AbstractBackEndDataProvider<C
         } else {
             DATABASE.add(item);
         }
+
+ */
     }
 
     Optional<CLTV_HW_Measures> find(Integer id) {

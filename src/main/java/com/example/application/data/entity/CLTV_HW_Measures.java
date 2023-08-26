@@ -25,9 +25,9 @@ public class CLTV_HW_Measures {
     @NotEmpty
     private String channel = "";
     @NotEmpty
-    private Long value;
+    private String value;
 
-    public CLTV_HW_Measures(Integer id, Integer monat_ID, String device, String measure_Name, String channel, Long value) {
+    public CLTV_HW_Measures(Integer id, Integer monat_ID, String device, String measure_Name, String channel, String value) {
         this.id = id;
         this.monat_ID = monat_ID;
         this.device = device;
@@ -73,11 +73,13 @@ public class CLTV_HW_Measures {
     }
 
     public String getValue() {
-        return value.toString();
+        //return value.toString();
+        return value;
     }
 
     public void setValue(String value) {
-        value = String.valueOf(Long.valueOf(value));
+  //      value = String.valueOf(Long.valueOf(value));
+        value=value;
     }
 
     public void setId(Integer id) {

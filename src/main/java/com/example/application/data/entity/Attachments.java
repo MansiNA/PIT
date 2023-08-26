@@ -13,13 +13,13 @@ public class Attachments {
     private Long id;
 
     @NotEmpty
-    private String Description;
+    private String description;
 
     @NotEmpty
-    private String Filename;
+    private String filename;
 
     @Lob
-    private byte[] Filecontent;
+    private byte[] filecontent;
 
     public Attachments() {
 
@@ -34,33 +34,33 @@ public class Attachments {
     }
 
     public String getDescription() {
-        return Description;
+        return description;
     }
 
     public void setDescription(String description) {
-        Description = description;
+        description = description;
     }
 
     public String getFilename() {
-        return Filename;
+        return filename;
     }
 
     public void setFilename(String filename) {
-        Filename = filename;
+        filename = filename;
     }
 
     public byte[] getFilecontent() {
-        return Filecontent;
+        return filecontent;
     }
 
     public void setFilecontent(byte[] filecontent) {
-        Filecontent = filecontent;
+        filecontent = filecontent;
     }
 
     public Attachments(Long id, String description, String filename, byte[] filecontent) {
         this.id = id;
-        Description = description;
-        Filename = filename;
-        Filecontent = filecontent;
+        description = description;
+        filename = filename;
+        filecontent = filecontent;
     }
 }

@@ -1,22 +1,20 @@
 package com.example.application.views;
 
-import com.example.application.data.entity.Attachments;
-import com.example.application.data.entity.KnowledgeBase;
-import com.example.application.data.entity.ProductHierarchie;
-import com.example.application.data.service.AttachmentsService;
-import com.example.application.data.service.KnowledgeBaseService;
-import com.example.application.data.service.MSMService;
+import com.example.application.data.entity.*;
+import com.example.application.data.service.*;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.renderer.NativeButtonRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -24,7 +22,10 @@ import com.wontlost.ckeditor.Config;
 import com.wontlost.ckeditor.Constants;
 import com.wontlost.ckeditor.VaadinCKEditor;
 import com.wontlost.ckeditor.VaadinCKEditorBuilder;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
+import java.util.List;
 import java.util.Optional;
 
 
@@ -34,8 +35,13 @@ public class PFGCubeView extends VerticalLayout {
 
     private final MSMService service;
     private final KnowledgeBaseService knowledgeBaseService;
+    private final AttachmentsService attachmentsService;
+    private final AgentJobsService agentJobsService;
+    private final ProjectService projectService;
     Grid<ProductHierarchie> grid = new Grid<>(ProductHierarchie.class);
     Grid<Attachments> gridAttachments = new Grid<>(Attachments.class);
+
+    Grid<AgentJobs> gridAgentJobs = new Grid<>(AgentJobs.class);
     TextField filterText = new TextField();
     TabSheet tabSheet = new TabSheet();
 
@@ -44,9 +50,12 @@ public class PFGCubeView extends VerticalLayout {
 
     VaadinCKEditor editor;
     PFGProductForm form;
-    public PFGCubeView(MSMService service, KnowledgeBaseService knowledgeBaseService, AttachmentsService attachmentsService) {
+    public PFGCubeView(MSMService service, KnowledgeBaseService knowledgeBaseService, AttachmentsService attachmentsService, AgentJobsService agentJobsService, ProjectService projectService) {
         this.service = service;
         this.knowledgeBaseService = knowledgeBaseService;
+        this.attachmentsService = attachmentsService;
+        this.agentJobsService = agentJobsService;
+        this.projectService = projectService;
 
         addClassName("list-view");
         setSizeFull();
@@ -113,8 +122,9 @@ public class PFGCubeView extends VerticalLayout {
         //tabSheet.add("Description",  new Div(new Text("This is the Description tab content")));
         tabSheet.add("Description",  getPFGDescription());
         tabSheet.add("PFG-Mapping", getPFGMapping() );
-        tabSheet.add("Attachments",  new Div(new Text("This is the Attachments tab content")));
-        tabSheet.add("DB-Jobs",  new Div(new Text("This is the Job-Info/Execution tab")));
+       // tabSheet.add("Attachments",  new Div(new Text("This is the Attachments tab content")));
+        tabSheet.add("Attachments",  getAttachmentsTab() );
+        tabSheet.add("DB-Jobs",  getAgentJobTab() );
         tabSheet.add("QS",  new Div(new Text("This is the QS tab content")));
 
 
@@ -122,6 +132,61 @@ public class PFGCubeView extends VerticalLayout {
         tabSheet.setHeightFull();
 
         return tabSheet;
+
+    }
+
+    private Component getAgentJobTab() {
+
+        configureAgentJobGrid();
+
+        HorizontalLayout content = new HorizontalLayout(gridAgentJobs);
+
+        content.setSizeFull();
+        content.setHeightFull();
+
+        return content;
+
+    }
+
+    private void configureAgentJobGrid() {
+        gridAgentJobs.addClassNames("PFG-Attachmentsgrid");
+        //gridAttachments.setSizeFull();
+        gridAgentJobs.setColumns("name", "step_id", "step_name", "time_run", "next_time_run", "result" );
+
+        gridAgentJobs.addColumn(
+                new NativeButtonRenderer<>("Run",
+                        clickedItem -> {
+
+                            System.out.println("clicked:" + clickedItem.getName());
+                        })
+        );
+
+
+        gridAgentJobs.getColumns().forEach(col -> col.setAutoWidth(true));
+
+        gridAgentJobs.setItems(getAgentJobs());
+
+    }
+
+    private List<AgentJobs> getAgentJobs() {
+
+        Project project = projectService.search("PFG-Cube");
+
+
+        return agentJobsService.findbyJobName(project.getAgentjobs());
+      //  return agentJobsService.findAll();
+
+    }
+
+    private Component getAttachmentsTab() {
+        configureAttachmentsGrid();
+
+        HorizontalLayout content = new HorizontalLayout(gridAttachments);
+
+        content.setSizeFull();
+        content.setHeightFull();
+
+        return content;
 
     }
 
@@ -273,11 +338,14 @@ public class PFGCubeView extends VerticalLayout {
     }
 
     private void configureAttachmentsGrid() {
+
         gridAttachments.addClassNames("PFG-Attachmentsgrid");
-        gridAttachments.setSizeFull();
-        gridAttachments.setColumns("Filename", "Description");
+        //gridAttachments.setSizeFull();
+        gridAttachments.setColumns("filename", "description");
 
         gridAttachments.getColumns().forEach(col -> col.setAutoWidth(true));
+
+        gridAttachments.setItems(getAttachments());
 
 //        grid.asSingleSelect().addValueChangeListener(event ->
 //                editProduct(event.getValue()));
@@ -286,6 +354,10 @@ public class PFGCubeView extends VerticalLayout {
 
     }
 
+    private List<Attachments> getAttachments() {
+
+        return attachmentsService.findAll();
+    }
 
 
     private void editProduct(ProductHierarchie product) {
