@@ -27,9 +27,9 @@ public class CLTV_HW_Measures {
     @NotEmpty
     private String value;
 
-    public CLTV_HW_Measures(Integer id, Integer monat_ID, String device, String measure_Name, String channel, String value) {
+    public CLTV_HW_Measures(Integer id, Integer monat_id, String device, String measure_Name, String channel, String value) {
         this.id = id;
-        this.monat_ID = monat_ID;
+        this.monat_ID = monat_id;
         this.device = device;
         this.measure_Name = measure_Name;
         this.channel = channel;
@@ -44,8 +44,8 @@ public class CLTV_HW_Measures {
         return monat_ID;
     }
 
-    public void setMonat_ID(Integer monat_ID) {
-        monat_ID = monat_ID;
+    public void setMonat_ID(Integer monat_id) {
+        this.monat_ID = monat_id;
     }
 
     public String getDevice() {
@@ -53,7 +53,7 @@ public class CLTV_HW_Measures {
     }
 
     public void setDevice(String device) {
-        device = device;
+        this.device = device;
     }
 
     public String getMeasure_Name() {
@@ -61,7 +61,7 @@ public class CLTV_HW_Measures {
     }
 
     public void setMeasure_Name(String measure_Name) {
-        measure_Name = measure_Name;
+        this.measure_Name = measure_Name;
     }
 
     public String getChannel() {
@@ -69,7 +69,7 @@ public class CLTV_HW_Measures {
     }
 
     public void setChannel(String channel) {
-        channel = channel;
+        this.channel = channel;
     }
 
     public String getValue() {
@@ -79,7 +79,7 @@ public class CLTV_HW_Measures {
 
     public void setValue(String value) {
   //      value = String.valueOf(Long.valueOf(value));
-        value=value;
+        this.value=value;
     }
 
     public void setId(Integer id) {
