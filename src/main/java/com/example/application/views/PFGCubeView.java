@@ -9,6 +9,7 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.tabs.Tab;
@@ -25,6 +26,7 @@ import com.wontlost.ckeditor.VaadinCKEditorBuilder;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
+import javax.swing.text.Position;
 import java.util.List;
 import java.util.Optional;
 
@@ -108,14 +110,16 @@ public class PFGCubeView extends VerticalLayout {
             knowledgeBaseService.update(myKB);
             editBtn.setVisible(true);
             saveBtn.setVisible(false);
-            editor.setReadOnly(true);
+            //editor.setReadOnly(true);
+            editor.setReadOnlyWithToolbarAction(!editor.isReadOnly());
 
         }));
 
         editBtn.addClickListener(e->{
             editBtn.setVisible(false);
             saveBtn.setVisible(true);
-            editor.setReadOnly(false);
+            //editor.setReadOnly(false);
+            editor.setReadOnlyWithToolbarAction(!editor.isReadOnly());
         });
 
 
@@ -149,15 +153,26 @@ public class PFGCubeView extends VerticalLayout {
     }
 
     private void configureAgentJobGrid() {
-        gridAgentJobs.addClassNames("PFG-Attachmentsgrid");
+        gridAgentJobs.addClassNames("PFG-AgentJobs");
         //gridAttachments.setSizeFull();
-        gridAgentJobs.setColumns("name", "step_id", "step_name", "time_run", "next_time_run", "result" );
+        gridAgentJobs.setColumns("name", "job_Activity", "duration_Min", "jobStartDate", "jobExecutedStepDate", "jobNextRunDate", "result" );
+
+        //select JobName, JobEnabled,JobDescription, JobActivity, DurationMin, JobStartDate, JobLastExecutedStep, JobExecutedStepDate, JobStopDate, JobNextRunDate, Result from job_status
 
         gridAgentJobs.addColumn(
                 new NativeButtonRenderer<>("Run",
                         clickedItem -> {
 
                             System.out.println("clicked:" + clickedItem.getName());
+                            Notification notification = Notification.show("Job " + clickedItem.getName() + " wurde gestartet...",6000, Notification.Position.TOP_END);
+                            notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                            try {
+                                startJob(clickedItem.getName());
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
+
+
                         })
         );
 
@@ -201,11 +216,11 @@ public class PFGCubeView extends VerticalLayout {
 
         VerticalLayout content = new VerticalLayout();
 
-        Button changeReadonlyMode = new Button("change readonly mode");
+   //     Button changeReadonlyMode = new Button("change readonly mode");
 
-        changeReadonlyMode.addClickListener((event -> {
-            editor.setReadOnlyWithToolbarAction(!editor.isReadOnly());
-        }));
+//        changeReadonlyMode.addClickListener((event -> {
+//            editor.setReadOnlyWithToolbarAction(!editor.isReadOnly());
+//        }));
 
         Config config = new Config();
         config.setBalloonToolBar(Constants.Toolbar.values());
@@ -229,7 +244,7 @@ public class PFGCubeView extends VerticalLayout {
         editor.setReadOnly(true);
 
 
-        content.add(changeReadonlyMode,editor,editBtn,saveBtn);
+        content.add(editor,editBtn,saveBtn);
 
         Long id = 1L;
         Optional<KnowledgeBase> kb = knowledgeBaseService.findById(id);
@@ -395,8 +410,11 @@ public class PFGCubeView extends VerticalLayout {
         return toolbar;
     }
 
-    private void startJob() {
-        service.startJob("Test");
+    private void startJob(String jobName) throws InterruptedException {
+        service.startJob(jobName);
+
+        Thread.sleep(2000);
+        gridAgentJobs.setItems(getAgentJobs());
 
     }
 

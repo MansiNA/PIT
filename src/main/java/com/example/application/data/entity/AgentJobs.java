@@ -12,24 +12,26 @@ import java.sql.Date;
 public class AgentJobs {
 
 
+    @Id
     private String name;
 
-    private Date date_created;
+    private String jobEnabled;
 
-    private Integer step_id;
+    private String jobDescription;
 
-    private String step_name;
+    private String job_activity;
 
-    private String next_time_run;
+    private String duration_Min;
 
-    private String time_run;
+    private Date jobStartDate;
 
-    private String job_status;
+    private String jobLastExecutedStep;
 
+    private String jobExecutedStepDate;
+
+    private String jobStopDate;
+    private String jobNextRunDate;
     private String result;
-
-    @Id
-    private String id;
 
     public String getName() {
         return name;
@@ -39,52 +41,76 @@ public class AgentJobs {
         this.name = name;
     }
 
-    public Date getDate_created() {
-        return date_created;
+    public String getJobEnabled() {
+        return jobEnabled;
     }
 
-    public void setDate_created(Date date_created) {
-        this.date_created = date_created;
+    public void setJobEnabled(String jobEnabled) {
+        this.jobEnabled = jobEnabled;
     }
 
-    public Integer getStep_id() {
-        return step_id;
+    public String getJobDescription() {
+        return jobDescription;
     }
 
-    public void setStep_id(Integer step_id) {
-        this.step_id = step_id;
+    public void setJobDescription(String jobDescription) {
+        this.jobDescription = jobDescription;
     }
 
-    public String getStep_name() {
-        return step_name;
+    public String getJob_Activity() {
+        return job_activity;
     }
 
-    public void setStep_name(String step_name) {
-        this.step_name = step_name;
+    public void setJob_Activity(String jobactivity) {
+        this.job_activity = jobactivity;
     }
 
-    public String getNext_time_run() {
-        return next_time_run;
+    public String getDuration_Min() {
+        return duration_Min;
     }
 
-    public void setNext_time_run(String next_time_run) {
-        this.next_time_run = next_time_run;
+    public void setDuration_Min(String duration_Min) {
+        this.duration_Min = duration_Min;
     }
 
-    public String getTime_run() {
-        return time_run;
+    public Date getJobStartDate() {
+        return jobStartDate;
     }
 
-    public void setTime_run(String time_run) {
-        this.time_run = time_run;
+    public void setJobStartDate(Date jobStartDate) {
+        this.jobStartDate = jobStartDate;
     }
 
-    public String getJob_status() {
-        return job_status;
+    public String getJobLastExecutedStep() {
+        return jobLastExecutedStep;
     }
 
-    public void setJob_status(String job_status) {
-        this.job_status = job_status;
+    public void setJobLastExecutedStep(String jobLastExecutedStep) {
+        this.jobLastExecutedStep = jobLastExecutedStep;
+    }
+
+    public String getJobExecutedStepDate() {
+        return jobExecutedStepDate;
+    }
+
+    public void setJobExecutedStepDate(String jobExecutedStepDate) {
+        this.jobExecutedStepDate = jobExecutedStepDate;
+    }
+
+    public String getJobStopDate() {
+        return jobStopDate;
+    }
+
+    public void setJobStopDate(String jobStopDate) {
+        this.jobStopDate = jobStopDate;
+    }
+
+    public String getJobNextRunDate() {
+        return jobNextRunDate;
+    }
+
+    public void setJobNextRunDate(String jobNextRunDate) {
+        this.jobNextRunDate = jobNextRunDate;
     }
 
     public String getResult() {
@@ -95,11 +121,5 @@ public class AgentJobs {
         this.result = result;
     }
 
-    public void setId(String id) {
-        this.id = id;
-    }
 
-    public String getId() {
-        return id;
-    }
 }
