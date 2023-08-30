@@ -53,9 +53,17 @@ public class MSMService {
         productHierarchieRepository.save(product);
     }
 
-    public void startJob(String jobname ){
+    public String startJob(String jobname ){
 
-        template.execute("msdb.dbo.sp_start_job @job_name=" + jobname);
+        try {
+            template.execute("msdb.dbo.sp_start_job @job_name=" + jobname);
+        }
+        catch (Exception e)
+        {
+            return e.getMessage();
+        }
+
+        return "OK";
 
     }
 

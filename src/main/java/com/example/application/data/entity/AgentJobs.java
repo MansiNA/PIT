@@ -23,7 +23,7 @@ public class AgentJobs {
 
     private String duration_Min;
 
-    private Date jobStartDate;
+    private String jobStartDate;
 
     private String jobLastExecutedStep;
 
@@ -73,11 +73,11 @@ public class AgentJobs {
         this.duration_Min = duration_Min;
     }
 
-    public Date getJobStartDate() {
+    public String getJobStartDate() {
         return jobStartDate;
     }
 
-    public void setJobStartDate(Date jobStartDate) {
+    public void setJobStartDate(String jobStartDate) {
         this.jobStartDate = jobStartDate;
     }
 

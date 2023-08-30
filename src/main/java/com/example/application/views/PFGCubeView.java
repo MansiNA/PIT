@@ -3,22 +3,30 @@ package com.example.application.views;
 import com.example.application.data.entity.*;
 import com.example.application.data.service.*;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Article;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
+import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.NativeButtonRenderer;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.Command;
 import com.wontlost.ckeditor.Config;
 import com.wontlost.ckeditor.Constants;
 import com.wontlost.ckeditor.VaadinCKEditor;
@@ -27,8 +35,15 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import javax.swing.text.Position;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 
 @Route(value="PFG-Cube", layout = MainLayout.class)
@@ -49,9 +64,23 @@ public class PFGCubeView extends VerticalLayout {
 
     Button saveBtn = new Button("save");
     Button editBtn = new Button("edit");
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
+    Div textArea = new Div();
+    VerticalLayout messageLayout = new VerticalLayout();
 
     VaadinCKEditor editor;
     PFGProductForm form;
+
+
+    Checkbox autorefresh = new Checkbox();
+
+    private Label lastRefreshLabel;
+    private Label countdownLabel;
+    private ScheduledExecutorService executor;
+    private UI ui ;
+    Instant startTime;
+
+
     public PFGCubeView(MSMService service, KnowledgeBaseService knowledgeBaseService, AttachmentsService attachmentsService, AgentJobsService agentJobsService, ProjectService projectService) {
         this.service = service;
         this.knowledgeBaseService = knowledgeBaseService;
@@ -59,11 +88,20 @@ public class PFGCubeView extends VerticalLayout {
         this.agentJobsService = agentJobsService;
         this.projectService = projectService;
 
+        // System.out.println("UI-ID im Konstruktor: " + ui.toString());
+
+        countdownLabel = new Label();
+        lastRefreshLabel=new Label();
+        countdownLabel.setVisible(false);
+
+        ui= UI.getCurrent();
+
         addClassName("list-view");
         setSizeFull();
         configureGrid();
        // configureAttachmentsGrid();
         configureForm();
+        configureLoggingArea();
 
         saveBtn.setVisible(false);
         editBtn.setVisible(true);
@@ -80,6 +118,24 @@ public class PFGCubeView extends VerticalLayout {
 
         updateList();
         closeEditor();
+    }
+
+    private void configureLoggingArea() {
+
+        messageLayout = new VerticalLayout();
+        messageLayout.setWidthFull();
+        messageLayout.getStyle().set("background-color", "black");
+        messageLayout.getStyle().set("color", "white");
+        messageLayout.getStyle().set("position", "fixed");
+        messageLayout.getStyle().set("bottom", "0");
+
+        // Create and add messages
+
+        messageLayout.add(textArea);
+
+        // Add the layout to the main view
+        add(messageLayout);
+
     }
 
 
@@ -125,7 +181,7 @@ public class PFGCubeView extends VerticalLayout {
 
         //tabSheet.add("Description",  new Div(new Text("This is the Description tab content")));
         tabSheet.add("Description",  getPFGDescription());
-        tabSheet.add("PFG-Mapping", getPFGMapping() );
+    //    tabSheet.add("PFG-Mapping", getPFGMapping() );
        // tabSheet.add("Attachments",  new Div(new Text("This is the Attachments tab content")));
         tabSheet.add("Attachments",  getAttachmentsTab() );
         tabSheet.add("DB-Jobs",  getAgentJobTab() );
@@ -141,21 +197,153 @@ public class PFGCubeView extends VerticalLayout {
 
     private Component getAgentJobTab() {
 
-        configureAgentJobGrid();
+   //     configureAgentJobGrid();
 
-        HorizontalLayout content = new HorizontalLayout(gridAgentJobs);
+        VerticalLayout content = new VerticalLayout(gridAgentJobs);
 
         content.setSizeFull();
-        content.setHeightFull();
+        content.setHeight("250px");
+
+        content.add(getAgentJobToolbar());
+
 
         return content;
 
     }
 
+    private Component getAgentJobToolbar() {
+
+        Button refreshBtn = new Button("refresh");
+        refreshBtn.addClickListener(e->{
+            //System.out.println("Refresh Button gedrückt!");
+
+            gridAgentJobs.setItems(getAgentJobs());
+            updateLastRefreshLabel();
+
+        });
+
+        countdownLabel.setText("initialisiert");
+
+        autorefresh.setLabel("Auto-Refresh");
+
+        autorefresh.addClickListener(e->{
+
+            if (autorefresh.getValue()){
+                System.out.println("Autorefresh wird eingeschaltet.");
+                startCountdown(Duration.ofSeconds(60));
+              //  countdownLabel.setText("timer on");
+                countdownLabel.setVisible(true);
+
+             /*   Integer count = 0;
+                while (count < 10) {
+                    // Sleep to emulate background work
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                    String message = "This is update " + count++;
+
+                    ui.access(() -> add(new Span(message)));
+                }*/
+
+                // Inform that we are done
+                ui.access(() -> {
+                    add(new Span("Done updating"));
+                });
+
+
+
+
+            }
+            else{
+                System.out.println("Autorefresh wird ausgeschaltet.");
+                stopCountdown();
+                countdownLabel.setVisible(false);
+            }
+
+        });
+
+        updateLastRefreshLabel();
+        HorizontalLayout layout = new HorizontalLayout(refreshBtn,lastRefreshLabel, autorefresh, countdownLabel);
+        layout.setPadding(false);
+        layout.setAlignItems(FlexComponent.Alignment.BASELINE);
+
+
+        return layout;
+
+    }
+
+
+    private void startCountdown(Duration duration) {
+        executor = Executors.newSingleThreadScheduledExecutor();
+
+        startTime = Instant.now();
+
+        updateLastRefreshLabel();
+
+        executor.scheduleAtFixedRate(() -> {
+
+           /* Command com = new Command() {
+                @Override
+                public void execute() {
+                    countdownLabel.setText("ongoing");
+                }
+            };
+
+            ui.access(com);*/
+
+
+
+            ui.access(() -> {
+
+                Duration remainingTime = calculateRemainingTime(duration, startTime);
+         //       updateCountdownLabel(remainingTime);
+
+                countdownLabel.setText("ongoing");
+
+                //System.out.println("UI-ID: " + ui.toString());
+
+            });
+            ui.notify();
+
+        }, 0, 1, java.util.concurrent.TimeUnit.SECONDS);
+    }
+
+    private void updateCountdownLabel(Duration remainingTime) {
+        long seconds = remainingTime.getSeconds();
+        String formattedTime = String.format("%02d", (seconds % 60));
+
+        System.out.println("Timeremaining:" + remainingTime);
+
+        if (remainingTime.isNegative()){
+            startTime = Instant.now();
+
+            //gridAgentJobs.setItems(getAgentJobs());
+
+            updateLastRefreshLabel();
+            return;
+        }
+
+        countdownLabel.setText("in " + formattedTime + " Sekunden");
+    }
+
+    private void updateLastRefreshLabel() {
+        LocalTime currentTime = LocalTime.now();
+        String formattedTime = currentTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+
+        lastRefreshLabel.setText("letzte Aktualisierung: " + formattedTime);
+    }
+    private void stopCountdown() {
+        if (executor != null && !executor.isShutdown()) {
+            executor.shutdown();
+        }
+    }
+
     private void configureAgentJobGrid() {
         gridAgentJobs.addClassNames("PFG-AgentJobs");
         //gridAttachments.setSizeFull();
-        gridAgentJobs.setColumns("name", "job_Activity", "duration_Min", "jobStartDate", "jobExecutedStepDate", "jobNextRunDate", "result" );
+        gridAgentJobs.setColumns("name", "job_Activity", "duration_Min", "jobStartDate", "jobStopDate", "jobNextRunDate", "result" );
 
         //select JobName, JobEnabled,JobDescription, JobActivity, DurationMin, JobStartDate, JobLastExecutedStep, JobExecutedStepDate, JobStopDate, JobNextRunDate, Result from job_status
 
@@ -182,6 +370,13 @@ public class PFGCubeView extends VerticalLayout {
         gridAgentJobs.setItems(getAgentJobs());
 
     }
+
+    private Duration calculateRemainingTime(Duration duration, Instant startTime) {
+        Instant now = Instant.now();
+        Instant endTime = startTime.plus(duration);
+        return Duration.between(now, endTime);
+    }
+
 
     private List<AgentJobs> getAgentJobs() {
 
@@ -411,12 +606,26 @@ public class PFGCubeView extends VerticalLayout {
     }
 
     private void startJob(String jobName) throws InterruptedException {
-        service.startJob(jobName);
+
+        var erg= service.startJob(jobName);
+        if (!erg.contains("OK"))
+        {
+            Notification.show(erg, 5000, Notification.Position.MIDDLE);
+        }
+
+        Article article=new Article();
+        article.setText(LocalDateTime.now().format(formatter) + ": Job " + jobName + " gestartet..." );
+        textArea.add (article);
 
         Thread.sleep(2000);
         gridAgentJobs.setItems(getAgentJobs());
 
     }
 
-
+    @Override
+    protected void onDetach(DetachEvent event) {
+        super.onDetach(event);
+        // Stoppe den Timer, wenn das UI geschlossen wird
+        stopCountdown();
+    }
 }

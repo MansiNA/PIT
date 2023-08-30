@@ -11,10 +11,10 @@ import java.util.List;
 
 public interface AgentJobsRepository extends JpaRepository<AgentJobs, Long> {
 
-    @Query("select j from AgentJobs j where lower(j.name) = lower(:searchTerm)")
-    List<AgentJobs> search(@Param("searchTerm") String searchTerm);
-
-
+    //@Query("select j from AgentJobs j where lower(j.name) = lower(:searchTerm)")
+    @Query("select j from AgentJobs j where (j.name) in (:searchTerm)")
+    //List<AgentJobs> search(@Param("searchTerm") String searchTerm);
+    AgentJobs search(@Param("searchTerm") String searchTerm);
 
 
 }
