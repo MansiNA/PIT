@@ -181,7 +181,7 @@ public class PFGCubeView extends VerticalLayout {
 
         //tabSheet.add("Description",  new Div(new Text("This is the Description tab content")));
         tabSheet.add("Description",  getPFGDescription());
-    //    tabSheet.add("PFG-Mapping", getPFGMapping() );
+        tabSheet.add("PFG-Mapping", getPFGMapping() );
        // tabSheet.add("Attachments",  new Div(new Text("This is the Attachments tab content")));
         tabSheet.add("Attachments",  getAttachmentsTab() );
         tabSheet.add("DB-Jobs",  getAgentJobTab() );
