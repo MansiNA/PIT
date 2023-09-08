@@ -177,7 +177,7 @@ public class MappingExampleView extends VerticalLayout {
             Notification.show("Exportiere Daten ");
             //System.out.println("aktuelle_SQL:" + aktuelle_SQL);
             try {
-                generateExcel(exportPath + exportFileName, "SELECT [id],[monat_id],[device],[measure_name],[channel],[value] FROM [TEF].[dbo].[cltv_hw_measures]");
+                generateExcel(exportPath + exportFileName, "SELECT [id],[monat_id],[device],[measure_name],[channel],[value] FROM [PIT].[dbo].[cltv_hw_measures]");
 
                 File file = new File(exportPath + exportFileName);
                 StreamResource streamResource = new StreamResource(file.getName(), () -> getStream(file));
@@ -202,7 +202,7 @@ public class MappingExampleView extends VerticalLayout {
 
         try {
 
-            Connection conn = DriverManager.getConnection("jdbc:sqlserver://192.168.58.130;databaseName=TEF;encrypt=true;trustServerCertificate=true", "dwhflex", "dwhflex");
+            Connection conn = DriverManager.getConnection("jdbc:sqlserver://128.140.47.43;databaseName=PIT;encrypt=true;trustServerCertificate=true", "PIT", "PIT!20230904");
 
 
             //   DriverManager.registerDriver(new oracle.jdbc.driver.OracleDriver());
@@ -572,14 +572,14 @@ public class MappingExampleView extends VerticalLayout {
 
         try {
             DriverManagerDataSource ds = new DriverManagerDataSource();
-    ds.setUrl("jdbc:sqlserver://192.168.58.130;databaseName=TEF;encrypt=true;trustServerCertificate=true");
-    ds.setUsername("dwhflex");
-    ds.setPassword("dwhflex");
+    ds.setUrl("jdbc:sqlserver://128.140.47.43;databaseName=PIT;encrypt=true;trustServerCertificate=true");
+    ds.setUsername("PIT");
+    ds.setPassword("PIT!20230904");
 
 
 
             jdbcTemplate.setDataSource(ds);
-            jdbcTemplate.batchUpdate("INSERT INTO [TEF].[dbo].[cltv_hw_measures] (id, monat_id, device, measure_name, channel, [value]) VALUES (?, ?, ?,?, ?, ?)",
+            jdbcTemplate.batchUpdate("INSERT INTO [PIT].[dbo].[cltv_hw_measures] (id, monat_id, device, measure_name, channel, [value]) VALUES (?, ?, ?,?, ?, ?)",
                     elaFavoritenListe,
                     100,
                     (PreparedStatement ps, CLTV_HW_Measures elaFavoriten1) -> {
@@ -762,9 +762,6 @@ public class MappingExampleView extends VerticalLayout {
         grid.setColumnOrder(grid.getColumnByKey(MONAT_ID), grid.getColumnByKey(DEVICE), grid.getColumnByKey(MEASURE_NAME), grid.getColumnByKey(CHANNEL)
                 , grid.getColumnByKey(VALUE)
                 , grid.getColumnByKey(EDIT_COLUMN));
-
-
-
 
 
     }
