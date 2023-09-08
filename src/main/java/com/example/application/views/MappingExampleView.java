@@ -177,6 +177,7 @@ public class MappingExampleView extends VerticalLayout {
             try {
                 //generateExcel(exportPath + exportFileName, "SELECT [id],[monat_id],[device],[measure_name],[channel],[value] FROM [TEF].[dbo].[cltv_hw_measures]");
                 generateAndExportExcel(exportPath + exportFileName);
+
                 File file = new File(exportPath + exportFileName);
                 StreamResource streamResource = new StreamResource(file.getName(), () -> getStream(file));
 
@@ -244,7 +245,8 @@ public class MappingExampleView extends VerticalLayout {
 
         try {
 
-            Connection conn = DriverManager.getConnection("jdbc:sqlserver://localhost;databaseName=TEF;encrypt=true;trustServerCertificate=true", "dwhflex", "dwhflex");
+            Connection conn = DriverManager.getConnection("jdbc:sqlserver://128.140.47.43;databaseName=PIT;encrypt=true;trustServerCertificate=true", "PIT", "PIT!20230904");
+
 
 
             //   DriverManager.registerDriver(new oracle.jdbc.driver.OracleDriver());
@@ -718,6 +720,7 @@ public class MappingExampleView extends VerticalLayout {
         grid.setColumnOrder(grid.getColumnByKey(MONAT_ID), grid.getColumnByKey(DEVICE), grid.getColumnByKey(MEASURE_NAME), grid.getColumnByKey(CHANNEL)
                 , grid.getColumnByKey(VALUE)
                 , grid.getColumnByKey(EDIT_COLUMN));
+
     }
 
     private void setupDataProvider() {
