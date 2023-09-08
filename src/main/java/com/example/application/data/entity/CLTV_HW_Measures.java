@@ -1,9 +1,8 @@
 package com.example.application.data.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
 @Table(schema = "dbo", name = "CLTV_HW_MEASURES")
@@ -11,9 +10,10 @@ public class CLTV_HW_Measures {
 
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotEmpty
+    @NotNull
     private Integer monat_ID ;
 
     @NotEmpty

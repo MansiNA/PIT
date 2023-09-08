@@ -135,6 +135,7 @@ public class CLTV_HW_MeasuresDataProvider  extends AbstractBackEndDataProvider<C
                     .orElse(0) + 1);
         }
 
+        //cltvHwMeasureService.update(item,item.getValue());
         cltvHwMeasureService.update(item,item.getValue());
 
 /*        final Optional<CLTV_HW_Measures> existingItem = find(item.getId());

@@ -36,9 +36,7 @@ import org.apache.poi.hssf.usermodel.HSSFFont;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
@@ -58,7 +56,6 @@ public class MappingExampleView extends VerticalLayout {
     private final CLTV_HW_MeasureService cltvHwMeasureService;
     private final JdbcTemplate jdbcTemplate;
     private Crud<CLTV_HW_Measures> crud;
-
     private String MONAT_ID = "monat_ID";
     private String DEVICE = "device";
     private String MEASURE_NAME = "measure_Name";
@@ -80,7 +77,6 @@ public class MappingExampleView extends VerticalLayout {
     ProgressBar spinner = new ProgressBar();
     //  Details details = new Details();
     Button countRows = new Button("Count Rows");
-
     Article article = new Article();
     String ret = "ok";
 
@@ -97,7 +93,7 @@ public class MappingExampleView extends VerticalLayout {
         this.jdbcTemplate = jdbcTemplate;
 
         crud = new Crud<>(CLTV_HW_Measures.class, createEditor());
-
+        System.out.println("..........................init.............");
 
         setupGrid();
         setupDataProvider();
@@ -138,8 +134,9 @@ public class MappingExampleView extends VerticalLayout {
 
         button.addClickListener(clickEvent -> {
             try {
+                System.out.println("uplod start.........old"+clickEvent);
                 upload();
-
+                System.out.println("uplod over.........old");
                 singleFileUpload.clearFileList();
             } catch (SQLException e) {
                 throw new RuntimeException(e);
@@ -170,39 +167,86 @@ public class MappingExampleView extends VerticalLayout {
     }
 
     private void setUpExportButton() {
-
+        System.out.println("export..start.....");
         exportButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
         exportButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
         exportButton.addClickListener(clickEvent -> {
+            System.out.println("export..click.....");
             Notification.show("Exportiere Daten ");
             //System.out.println("aktuelle_SQL:" + aktuelle_SQL);
             try {
-                generateExcel(exportPath + exportFileName, "SELECT [id],[monat_id],[device],[measure_name],[channel],[value] FROM [PIT].[dbo].[cltv_hw_measures]");
+                //generateExcel(exportPath + exportFileName, "SELECT [id],[monat_id],[device],[measure_name],[channel],[value] FROM [TEF].[dbo].[cltv_hw_measures]");
+                generateAndExportExcel(exportPath + exportFileName);
 
                 File file = new File(exportPath + exportFileName);
                 StreamResource streamResource = new StreamResource(file.getName(), () -> getStream(file));
 
                 anchor.setHref(streamResource);
-
-
                 anchor.setEnabled(true);
                 exportButton.setEnabled(false);
                 //      download("c:\\tmp\\" + aktuelle_Tabelle + ".xls");
-            } catch (IOException e) {
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         });
-
         anchor.getElement().setAttribute("download", true);
         anchor.setEnabled(false);
     }
+    public void generateAndExportExcel(String file) {
+        try {
+            // Fetch data using service
+            List<CLTV_HW_Measures> dataToExport = cltvHwMeasureService.findAll();
 
-    private static void generateExcel(String file, String query) throws IOException {
+            // Create a new Excel workbook and sheet using Apache POI
+            Workbook workBook = new HSSFWorkbook();
+            Sheet sheet1 = workBook.createSheet("Sheet1");
+
+            // Create CellStyle for headers
+            CellStyle cs = workBook.createCellStyle();
+            Font f = workBook.createFont();
+            f.setBold(true);
+            f.setFontHeightInPoints((short) 12);
+            cs.setFont(f);
+
+            // Create headers in the first row
+            Row headerRow = sheet1.createRow(0);
+            String[] headers = {"id", "monat_id", "device", "measure_name", "channel", "value"};
+            for (int i = 0; i < headers.length; i++) {
+                Cell headerCell = headerRow.createCell(i);
+                headerCell.setCellValue(headers[i]);
+                headerCell.setCellStyle(cs);
+            }
+
+            // Fill data in subsequent rows
+            int rowIndex = 1;
+            for (CLTV_HW_Measures measure : dataToExport) {
+                Row dataRow = sheet1.createRow(rowIndex++);
+                dataRow.createCell(0).setCellValue(measure.getId());
+                dataRow.createCell(1).setCellValue(measure.getMonat_ID());
+                dataRow.createCell(2).setCellValue(measure.getDevice());
+                dataRow.createCell(3).setCellValue(measure.getMeasure_Name());
+                dataRow.createCell(4).setCellValue(measure.getChannel());
+                dataRow.createCell(5).setCellValue(measure.getValue());
+            }
+
+            // Write the workbook to the specified file
+            try (FileOutputStream fileOut = new FileOutputStream(file)) {
+                workBook.write(fileOut);
+            }
+
+            // Close the workbook
+            workBook.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    private void generateExcel(String file, String query) throws IOException {
 
 
         try {
 
             Connection conn = DriverManager.getConnection("jdbc:sqlserver://128.140.47.43;databaseName=PIT;encrypt=true;trustServerCertificate=true", "PIT", "PIT!20230904");
+
 
 
             //   DriverManager.registerDriver(new oracle.jdbc.driver.OracleDriver());
@@ -235,6 +279,8 @@ public class MappingExampleView extends VerticalLayout {
 
             LinkedHashMap<Integer, TableInfo> hashMap=new LinkedHashMap<Integer, TableInfo>();
 
+            List<CLTV_HW_Measures> dataToExport = cltvHwMeasureService.findAll();
+            System.out.println(dataToExport.size()+".....yes export");
 
             for(int i=0;i<colCount;i++){
                 TableInfo tableInfo=new TableInfo();
@@ -334,7 +380,7 @@ public class MappingExampleView extends VerticalLayout {
     }
 
     private void upload() throws SQLException, IOException, ClassNotFoundException, InterruptedException {
-
+        System.out.println("upload file.........old");
         if(fileName.isEmpty() || fileName.length()==0)
         {
             article=new Article();
@@ -473,7 +519,7 @@ public class MappingExampleView extends VerticalLayout {
 
 
                 elaFavoritenListe.add(elaFavoriten);
-
+                System.out.println(elaFavoritenListe.size()+".............8");
             }
 
         }
@@ -501,19 +547,7 @@ public class MappingExampleView extends VerticalLayout {
         ui.setPollInterval(500);
 
         CompletableFuture.runAsync(() -> {
-
-            // Do some long running task
-            try {
-                ret = write2DB(elaFavoritenListe);
-
-
-                Thread.sleep(20); //2 Sekunden warten
-
-
-            } catch (InterruptedException | SQLException | ClassNotFoundException e) {
-                e.printStackTrace();
-                spinner.setVisible(false);
-            }
+            ret = write2DB(elaFavoritenListe);
 
             // Need to use access() when running from background thread
             ui.access(() -> {
@@ -559,56 +593,15 @@ public class MappingExampleView extends VerticalLayout {
 
     }
 
-    private String write2DB(List<CLTV_HW_Measures> elaFavoritenListe) throws ClassNotFoundException, SQLException {
-
-      //  Class.forName ("jdbc.sqlserver");
-        //     Connection conn = DriverManager.getConnection("jdbc:oracle:thin:@//37.120.189.200:1521/xe", "SYSTEM", "Michael123");
-        //     PreparedStatement sql_statement = null;
-        String jdbc_insert_sql = "INSERT INTO EKP.ELA_FAVORITEN"  + "(ID,BENUTZER_KENNUNG,NUTZER_ID,NAME,VORNAME,ORT,PLZ,STRASSE,HAUSNUMMER,ORGANISATION,VERSION) VALUES"  + "(?,?,?,?,?,?,?,?,?,?,?)";
-//        sql_statement = conn.prepareStatement(jdbc_insert_sql);
-
-        //Connection connection = DriverManager.getConnection("jdbc:sqlserver://192.168.58.130;databaseName=TEF;encrypt=true;trustServerCertificate=true", "dwhflex", "dwhflex");
-
-
+    private String write2DB(List<CLTV_HW_Measures> elaFavoritenListe) {
         try {
-            DriverManagerDataSource ds = new DriverManagerDataSource();
-    ds.setUrl("jdbc:sqlserver://128.140.47.43;databaseName=PIT;encrypt=true;trustServerCertificate=true");
-    ds.setUsername("PIT");
-    ds.setPassword("PIT!20230904");
-
-
-
-            jdbcTemplate.setDataSource(ds);
-            jdbcTemplate.batchUpdate("INSERT INTO [PIT].[dbo].[cltv_hw_measures] (id, monat_id, device, measure_name, channel, [value]) VALUES (?, ?, ?,?, ?, ?)",
-                    elaFavoritenListe,
-                    100,
-                    (PreparedStatement ps, CLTV_HW_Measures elaFavoriten1) -> {
-                        ps.setInt(1, elaFavoriten1.getId());
-                     //   ps.setInt(2, elaFavoriten1.getMonat_ID());
-                        ps.setDouble(2, elaFavoriten1.getMonat_ID());
-                        ps.setString(3, elaFavoriten1.getDevice());
-                        ps.setString(4, elaFavoriten1.getMeasure_Name());
-                        ps.setString(5, elaFavoriten1.getChannel());
-                        ps.setString(6, elaFavoriten1.getValue());
-                    });
-            //   textArea.setValue(textArea.getValue() + "\nIn DB gespeichert.");
+            System.out.println("good........"+elaFavoritenListe.size());
+            cltvHwMeasureService.saveAll(elaFavoritenListe);
+            return "ok";
         } catch (Exception e) {
-            //   textArea.setValue(textArea.getValue() + "\nFehler beim Speichern in DB!");
             System.out.println("Exception: " + e.getMessage());
             return e.getMessage();
         }
-
-
-        /* Close prepared statement */
-        //     sql_statement.close();
-        /* COMMIT transaction */
-
-//            conn.commit();
-        /* Close connection */
-//        conn.close();
-
-        return "ok";
-
     }
 
     private String checkCellString(Cell cell, Integer zeile, String spalte) {
@@ -666,36 +659,8 @@ public class MappingExampleView extends VerticalLayout {
 
     }
 
-
-  /*  private void countRows() {
-        String jdbc_sql ="select count(*) from EKP.ELA_FAVORITEN_NEU";
-
-        try {
-            DriverManagerDataSource ds = new DriverManagerDataSource();
-            Configuration conf;
-            conf = comboBox.getValue();
-
-            ds.setUrl(conf.getDb_Url());
-            ds.setUsername(conf.getUserName());
-            ds.setPassword(conf.getPassword());
-
-            jdbcTemplate.setDataSource(ds);
-            int result = jdbcTemplate.queryForObject(jdbc_sql, Integer.class);
-
-            article=new Article();
-            article.setText(LocalDateTime.now().format(formatter) + ": Info: Anzahl Zeilen in DB-Table " + result);
-            textArea.add(article);
-
-
-        } catch (Exception e) {
-            //   textArea.setValue(textArea.getValue() + "\nFehler beim Speichern in DB!");
-            System.out.println("Exception: " + e.getMessage());
-            // return e.getMessage();
-        }
-    }*/
-
     private void setupUploader() {
-
+        System.out.println("setup uploader................start");
         singleFileUpload.setWidth("600px");
         singleFileUpload.addSucceededListener(event -> {
             // Get information about the uploaded file
@@ -709,24 +674,19 @@ public class MappingExampleView extends VerticalLayout {
             // Do something with the file data
             // processFile(fileData, fileName, contentLength, mimeType);
         });
-
+        System.out.println("setup uploader................over");
     }
 
 
     private CrudEditor<CLTV_HW_Measures> createEditor() {
 
-        //NumberField monat_ID = new NumberField ("Monat_ID");
-
         TextField monat_ID = new TextField ("Monat_ID");
-
-
         TextField device = new TextField("Device");
-        TextField measure_name = new TextField("Measure");
+        TextField measure_name = new TextField("Measure Name");
         TextField channel = new TextField("Channel");
         TextField value = new TextField("Value");
 
-        FormLayout form = new FormLayout(monat_ID, device, measure_name, channel, value);
-
+        FormLayout editForm = new FormLayout(monat_ID, device, measure_name, channel, value);
 
         Binder<CLTV_HW_Measures> binder = new Binder<>(CLTV_HW_Measures.class);
         binder.forField(monat_ID).withNullRepresentation("202301").withConverter(new StringToIntegerConverter("Not a Number")).asRequired().bind(CLTV_HW_Measures::getMonat_ID, CLTV_HW_Measures::setMonat_ID);
@@ -740,14 +700,13 @@ public class MappingExampleView extends VerticalLayout {
         binder.forField(value).asRequired().bind(CLTV_HW_Measures::getValue,
                 CLTV_HW_Measures::setValue);
 
-        return new BinderCrudEditor<>(binder, form);
+        return new BinderCrudEditor<>(binder, editForm);
     }
 
     private void setupGrid() {
         Grid<CLTV_HW_Measures> grid = crud.getGrid();
 
         // Only show these columns (all columns shown by default):
-     //   List<String> visibleColumns = Arrays.asList(FIRST_NAME, LAST_NAME, EMAIL, PROFESSION, EDIT_COLUMN);
         List<String> visibleColumns = Arrays.asList(MONAT_ID, DEVICE, MEASURE_NAME, CHANNEL, VALUE, EDIT_COLUMN);
        // List<String> visibleColumns = Arrays.asList(MONAT_ID, DEVICE, MEASURE_NAME, CHANNEL, EDIT_COLUMN);
         grid.getColumns().forEach(column -> {
@@ -757,12 +716,10 @@ public class MappingExampleView extends VerticalLayout {
             }
         });
 
-
         // Reorder the columns (alphabetical by default)
         grid.setColumnOrder(grid.getColumnByKey(MONAT_ID), grid.getColumnByKey(DEVICE), grid.getColumnByKey(MEASURE_NAME), grid.getColumnByKey(CHANNEL)
                 , grid.getColumnByKey(VALUE)
                 , grid.getColumnByKey(EDIT_COLUMN));
-
 
     }
 

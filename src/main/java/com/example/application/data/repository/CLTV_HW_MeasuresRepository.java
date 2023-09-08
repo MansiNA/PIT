@@ -21,6 +21,4 @@ public interface CLTV_HW_MeasuresRepository  extends JpaRepository<CLTV_HW_Measu
             "where c.monat_ID = :searchTerm ")
 
     List<CLTV_HW_Measures> searchMonat(@Param("searchTerm") Integer searchTerm);
-
-
 }
