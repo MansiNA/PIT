@@ -11,45 +11,44 @@ import org.springframework.stereotype.Service;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class CLTV_HW_MeasureService {
+    private final CLTV_HW_MeasuresRepository repository;
 
-    private final CLTV_HW_MeasuresRepository cLTVHwMeasuresRepository;
-    @Autowired
-    private JdbcTemplate template;
+    public CLTV_HW_MeasureService(CLTV_HW_MeasuresRepository repository) {
+        this.repository = repository;
+    }
 
-    public CLTV_HW_MeasureService(CLTV_HW_MeasuresRepository cLTV_HW_MeasuresRepository) {
+    public Optional<CLTV_HW_Measures> get(Long id) {
+        return repository.findById(id);
+    }
 
-        cLTVHwMeasuresRepository = cLTV_HW_MeasuresRepository;
+    public CLTV_HW_Measures update(CLTV_HW_Measures entity) { return repository.save(entity);}
+    public void delete(Long id) {
+        repository.deleteById(id);
+    }
+
+    public List<CLTV_HW_Measures> findAll() {
+        return repository.findAll();
+    }
+
+    public Optional<CLTV_HW_Measures> findById(long id) {
+        return repository.findById(id);
+    }
+
+    public void saveAll(List<CLTV_HW_Measures> elaFavoritenListe) {
+        repository.saveAll(elaFavoritenListe);
     }
 
     public List<CLTV_HW_Measures> findAllProducts(String stringFilter) {
         if (stringFilter == null || stringFilter.isEmpty()) {
-
-
-            return cLTVHwMeasuresRepository.findAll();
+            return repository.findAll();
         } else {
-            return cLTVHwMeasuresRepository.search(stringFilter);
+            return repository.search(stringFilter);
         }
     }
-
-    public List<CLTV_HW_Measures> findProductsbyMonat(String stringFilter) {
-
-        if (stringFilter == null || stringFilter.isEmpty() || stringFilter.contains("kein Filter")) {
-            return cLTVHwMeasuresRepository.findAll();
-        }
-
-        Integer intFilter=Integer.parseInt(stringFilter);
-
-        if (intFilter == null || intFilter==0) {
-            System.out.println("Filter ist null!!");
-            return cLTVHwMeasuresRepository.findAll();
-        } else {
-            return cLTVHwMeasuresRepository.searchMonat(intFilter);
-        }
-    }
-
 
     public List<String> getMonate() {
         final List<String> Monate = new ArrayList<>();
@@ -82,7 +81,7 @@ public class CLTV_HW_MeasureService {
 
     public void update(CLTV_HW_Measures currow, String s) {
 
-      //  cLTVHwMeasuresRepository.save(currow);
+        //  cLTVHwMeasuresRepository.save(currow);
 
         try {
             // Verbindung zur Datenbank herstellen
@@ -100,9 +99,6 @@ public class CLTV_HW_MeasureService {
             e.printStackTrace();
         }
 
-
     }
-
-
 
 }
