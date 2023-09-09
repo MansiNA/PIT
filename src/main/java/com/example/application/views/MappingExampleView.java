@@ -7,6 +7,7 @@ import com.example.application.data.service.CLTV_HW_MeasureService;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.crud.BinderCrudEditor;
 import com.vaadin.flow.component.crud.Crud;
 import com.vaadin.flow.component.crud.CrudEditor;
@@ -19,9 +20,11 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.progressbar.ProgressBar;
+import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
@@ -29,6 +32,8 @@ import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.converter.StringToIntegerConverter;
+import com.vaadin.flow.data.provider.DataProvider;
+import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
@@ -47,6 +52,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Route(value="MappingExample", layout = MainLayout.class)
 @PageTitle("Mapping-Example | TEF-Control")
@@ -54,8 +60,9 @@ public class MappingExampleView extends VerticalLayout {
     private String exportPath;
     private String exportFileName = "HW_Mapping.xls";
     private final CLTV_HW_MeasureService cltvHwMeasureService;
-    private final JdbcTemplate jdbcTemplate;
+  //  private final JdbcTemplate jdbcTemplate;
     private Crud<CLTV_HW_Measures> crud;
+    private String ID = "Id";
     private String MONAT_ID = "monat_ID";
     private String DEVICE = "device";
     private String MEASURE_NAME = "measure_Name";
@@ -64,13 +71,15 @@ public class MappingExampleView extends VerticalLayout {
     //    private String PROFESSION = "profession";
     private String EDIT_COLUMN = "vaadin-crud-edit-column";
 
+    Grid<CLTV_HW_Measures> grid;
     MemoryBuffer memoryBuffer = new MemoryBuffer();
     Upload singleFileUpload = new Upload(memoryBuffer);
     InputStream fileData;
     String fileName = "";
     long contentLength = 0;
     String mimeType = "";
-    Button button = new Button("Hochladen");
+    Button addRowsBT = new Button("Add Rows");
+    Button replaceRowsBT = new Button("Replace Rows");
     Div textArea = new Div();
     //TextArea detailsText = new TextArea();
     Icon icon;
@@ -81,38 +90,47 @@ public class MappingExampleView extends VerticalLayout {
     String ret = "ok";
 
     private Button exportButton = new Button("Export");
+    private Button downloadButton = new Button("Download");
+    private Button uploadButton = new Button("Save");
     private Anchor anchor = new Anchor(getStreamResource("CLTV_HW_Mapping.xls", "default content"), "click to download");
 
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
 
-    public MappingExampleView(@Value("${csv_exportPath}") String p_exportPath, CLTV_HW_MeasureService cltvHwMeasureService, JdbcTemplate jdbcTemplate) {
+    //public MappingExampleView(@Value("${csv_exportPath}") String p_exportPath, CLTV_HW_MeasureService cltvHwMeasureService, JdbcTemplate jdbcTemplate) {
+     public MappingExampleView(@Value("${csv_exportPath}") String p_exportPath, CLTV_HW_MeasureService cltvHwMeasureService) {
 
         this.exportPath = p_exportPath;
 
         this.cltvHwMeasureService = cltvHwMeasureService;
-        this.jdbcTemplate = jdbcTemplate;
+      //  this.jdbcTemplate = jdbcTemplate;
 
         crud = new Crud<>(CLTV_HW_Measures.class, createEditor());
         System.out.println("..........................init.............");
 
         setupGrid();
-        setupDataProvider();
+
         setupUploader();
         setUpExportButton();
 
         crud.setHeight("600px");
 
-        add(crud);
+        //add(crud);
 
         HorizontalLayout horl = new HorizontalLayout();
-        //horl.setWidthFull();
-        horl.setWidth("600px");
+        horl.setWidthFull();
+      //  horl.setWidth("800px");
 
         VerticalLayout verl = new VerticalLayout();
-        verl.add(button, spinner);
+        verl.add(addRowsBT, replaceRowsBT, spinner);
 
-        //horl.add(singleFileUpload,verl,countRows);
-        horl.add(singleFileUpload, verl, exportButton, anchor);
+
+        ComboBox<String> databaseConnectionCB = new ComboBox<>();
+        databaseConnectionCB.setAllowCustomValue(true);
+        databaseConnectionCB.setItems("DEMCUC5AK26", "DEWSTTWAK11", "VAZ006");
+        databaseConnectionCB.setTooltipText("Select Database Connection");
+        databaseConnectionCB.setValue("DEMUC5AK26" );
+
+        horl.add(databaseConnectionCB, downloadButton, uploadButton, singleFileUpload, verl, exportButton, anchor);
         horl.setAlignItems(Alignment.CENTER);
 
         icon = VaadinIcon.EXCLAMATION_CIRCLE.create();
@@ -124,19 +142,65 @@ public class MappingExampleView extends VerticalLayout {
         //     details = new Details("Details",detailsText);
         //     details.setOpened(false);
         //     details.setWidthFull();
-        button.setEnabled(false);
+        addRowsBT.setEnabled(false);
+        replaceRowsBT.setEnabled(false);
 
-        button.setWidth("180px");
-        button.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
+        addRowsBT.setWidth("120px");
+        addRowsBT.setHeight("20px");
+        replaceRowsBT.setWidth("120px");
+        replaceRowsBT.setHeight("20px");
+        addRowsBT.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
+        replaceRowsBT.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
+
 
 
         //    countRows.addClickListener(clickEvent -> countRows());
 
-        button.addClickListener(clickEvent -> {
+
+        downloadButton.addClickListener(clickEvent -> {
+            setupDataProvider();
+
+        });
+
+        uploadButton.addClickListener(clickEvent -> {
+
+
+            //Notification notification = Notification.show("Upload not implementet yet",5000, Notification.Position.MIDDLE);
+            //notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+
+            DataProvider<CLTV_HW_Measures, Void> dataProvider = (DataProvider<CLTV_HW_Measures, Void>) grid.getDataProvider();
+
+            List<CLTV_HW_Measures>allItems = dataProvider.fetch(new Query<>()).collect(Collectors.toList());
+
+            Notification notification = Notification.show(allItems.size() + " Rows Uploaded start",2000, Notification.Position.MIDDLE);
+            notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+
+            String result=write2DB(allItems);
+            if (result.contains("ok")){
+                notification = Notification.show(allItems.size() + " Rows Uploaded successfully",3000, Notification.Position.MIDDLE);
+                notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            }
+            else
+            {
+                notification = Notification.show("Error during upload!",4000, Notification.Position.MIDDLE);
+                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            }
+
+
+        });
+
+
+
+        addRowsBT.addClickListener(clickEvent -> {
+            System.out.println("add rows to existing rows in the grid");
+            // upload();
+            singleFileUpload.clearFileList();
+        });
+
+        replaceRowsBT.addClickListener(clickEvent -> {
             try {
-                System.out.println("uplod start.........old"+clickEvent);
+                System.out.println("replace all rows in the grid");
                 upload();
-                System.out.println("uplod over.........old");
                 singleFileUpload.clearFileList();
             } catch (SQLException e) {
                 throw new RuntimeException(e);
@@ -152,7 +216,7 @@ public class MappingExampleView extends VerticalLayout {
         spinner.setIndeterminate(true);
         spinner.setVisible(false);
 
-        add(horl, textArea);
+        add(horl, textArea,crud);
 
         //    article=new Article();
         //    article.setText("Warten auf Datei");
@@ -380,7 +444,7 @@ public class MappingExampleView extends VerticalLayout {
     }
 
     private void upload() throws SQLException, IOException, ClassNotFoundException, InterruptedException {
-        System.out.println("upload file.........old");
+        System.out.println("in upload function");
         if(fileName.isEmpty() || fileName.length()==0)
         {
             article=new Article();
@@ -403,7 +467,8 @@ public class MappingExampleView extends VerticalLayout {
 
         //   FileInputStream input_document = new FileInputStream(new File("C:\\tmp\\ELA_FAVORITEN.XLS"));
         /* Load workbook */
-        button.setEnabled(false);
+        addRowsBT.setEnabled(false);
+        replaceRowsBT.setEnabled(false);
         //spinner.setVisible(true);
 
         HSSFWorkbook my_xls_workbook = new HSSFWorkbook(fileData);
@@ -542,38 +607,9 @@ public class MappingExampleView extends VerticalLayout {
 
         System.out.println("Anzahl Zeilen im Excel: " + elaFavoritenListe.size());
 
-        UI ui = UI.getCurrent();
-        // Instruct client side to poll for changes and show spinner
-        ui.setPollInterval(500);
-
-        CompletableFuture.runAsync(() -> {
-            ret = write2DB(elaFavoritenListe);
-
-            // Need to use access() when running from background thread
-            ui.access(() -> {
-                // Stop polling and hide spinner
-                ui.setPollInterval(-1);
-//            spinner.setValue(1);
-//            button.setEnabled(true);
-                spinner.setVisible(false);
-                if(!ret.equals("ok")){
-                    System.out.println("Fehlgeschlagen! " );
-                    article.add("\n");
-                    article.add(LocalDateTime.now().format(formatter) + ": Error: Upload to DB fehlgeschlagen: " + ret);
-                    textArea.add(article);
-
-                }
-                else {
-                    article.add("\n");
-                    article.add(LocalDateTime.now().format(formatter) + ": Info: Ende Upload to DB erfolgreich");
-                    textArea.add(article);
-                    setupDataProvider();
-                }
-                fileName="";
-            });
-        });
 
     }
+
 
     private Double checkCellDouble(Cell cell, Integer zeile, String spalte) {
 
@@ -659,6 +695,8 @@ public class MappingExampleView extends VerticalLayout {
 
     }
 
+
+
     private void setupUploader() {
         System.out.println("setup uploader................start");
         singleFileUpload.setWidth("600px");
@@ -668,7 +706,8 @@ public class MappingExampleView extends VerticalLayout {
             fileName = event.getFileName();
             contentLength = event.getContentLength();
             mimeType = event.getMIMEType();
-            button.setEnabled(true);
+            addRowsBT.setEnabled(true);
+            replaceRowsBT.setEnabled(true);
             textArea.setText("Warten auf Button \"Hochladen\"");
          //   detailsText.setValue("Weitere Ladeinformationen bzgl. >>" + fileName + "<<");
             // Do something with the file data
@@ -680,13 +719,14 @@ public class MappingExampleView extends VerticalLayout {
 
     private CrudEditor<CLTV_HW_Measures> createEditor() {
 
+        IntegerField ID = new IntegerField  ("Id");
         TextField monat_ID = new TextField ("Monat_ID");
         TextField device = new TextField("Device");
         TextField measure_name = new TextField("Measure Name");
         TextField channel = new TextField("Channel");
         TextField value = new TextField("Value");
 
-        FormLayout editForm = new FormLayout(monat_ID, device, measure_name, channel, value);
+        FormLayout editForm = new FormLayout(ID, monat_ID, device, measure_name, channel, value);
 
         Binder<CLTV_HW_Measures> binder = new Binder<>(CLTV_HW_Measures.class);
         binder.forField(monat_ID).withNullRepresentation("202301").withConverter(new StringToIntegerConverter("Not a Number")).asRequired().bind(CLTV_HW_Measures::getMonat_ID, CLTV_HW_Measures::setMonat_ID);
@@ -699,25 +739,36 @@ public class MappingExampleView extends VerticalLayout {
                 CLTV_HW_Measures::setChannel);
         binder.forField(value).asRequired().bind(CLTV_HW_Measures::getValue,
                 CLTV_HW_Measures::setValue);
+        binder.forField(ID).asRequired().bind(CLTV_HW_Measures::getId,
+                CLTV_HW_Measures::setId);
 
         return new BinderCrudEditor<>(binder, editForm);
     }
 
     private void setupGrid() {
-        Grid<CLTV_HW_Measures> grid = crud.getGrid();
+        grid = crud.getGrid();
+    //    grid.addColumn(CLTV_HW_Measures::getMonat_ID).setHeader("Monat");
 
-        // Only show these columns (all columns shown by default):
+
+    /*    // Only show these columns (all columns shown by default):
         List<String> visibleColumns = Arrays.asList(MONAT_ID, DEVICE, MEASURE_NAME, CHANNEL, VALUE, EDIT_COLUMN);
        // List<String> visibleColumns = Arrays.asList(MONAT_ID, DEVICE, MEASURE_NAME, CHANNEL, EDIT_COLUMN);
         grid.getColumns().forEach(column -> {
             String key = column.getKey();
+            //System.out.println("Key: " + key);
             if (!visibleColumns.contains(key)) {
-                grid.removeColumn(column);
+
+                  System.out.println("entferne column: " + column);
+                  grid.removeColumn(column);
+
             }
         });
+*/
+
+        grid.getColumnByKey("id").setHeader("ID").setWidth("10px");
 
         // Reorder the columns (alphabetical by default)
-        grid.setColumnOrder(grid.getColumnByKey(MONAT_ID), grid.getColumnByKey(DEVICE), grid.getColumnByKey(MEASURE_NAME), grid.getColumnByKey(CHANNEL)
+        grid.setColumnOrder( grid.getColumnByKey("id"), grid.getColumnByKey(MONAT_ID), grid.getColumnByKey(DEVICE), grid.getColumnByKey(MEASURE_NAME), grid.getColumnByKey(CHANNEL)
                 , grid.getColumnByKey(VALUE)
                 , grid.getColumnByKey(EDIT_COLUMN));
 
@@ -729,7 +780,13 @@ public class MappingExampleView extends VerticalLayout {
         crud.addDeleteListener(
                 deleteEvent -> dataProvider.delete(deleteEvent.getItem()));
         crud.addSaveListener(
-                saveEvent -> dataProvider.persist(saveEvent.getItem()));
+
+
+                saveEvent -> {
+                    System.out.println("geänderte ID: " + saveEvent.getItem().getId());
+                    //dataProvider.persist(saveEvent.getItem());
+
+                });
   //      crud.addEditListener(e -> System.out.println("Edit" + e.getItem().getId()));
     }
 

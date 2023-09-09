@@ -50,7 +50,7 @@ public class CLTV_HW_MeasureService {
         }
     }
 
-    public List<String> getMonate() {
+   /* public List<String> getMonate() {
         final List<String> Monate = new ArrayList<>();
         Monate.add("kein Filter");
 
@@ -76,7 +76,7 @@ public class CLTV_HW_MeasureService {
         }
 
         return Monate;
-    }
+    }*/
 
 
     public void update(CLTV_HW_Measures currow, String s) {
