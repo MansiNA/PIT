@@ -19,7 +19,7 @@ public class Project {
 
     private String page_url;
 
-    private String agentjobs;
+    private String agent_jobs;
 
     public void setId(Long id) {
         this.id = id;
@@ -62,10 +62,10 @@ public class Project {
     }
 
     public String getAgentjobs() {
-        return agentjobs;
+        return agent_jobs;
     }
 
     public void setAgentjobs(String agentjobs) {
-        this.agentjobs = agentjobs;
+        this.agent_jobs = agentjobs;
     }
 }

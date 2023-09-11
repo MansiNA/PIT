@@ -32,7 +32,9 @@ import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.converter.StringToIntegerConverter;
+import com.vaadin.flow.data.provider.ConfigurableFilterDataProviderWrapper;
 import com.vaadin.flow.data.provider.DataProvider;
+import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -194,6 +196,8 @@ public class MappingExampleView extends VerticalLayout {
         addRowsBT.addClickListener(clickEvent -> {
             System.out.println("add rows to existing rows in the grid");
             // upload();
+            Notification notification = Notification.show("To Do: Add Grid-Data with List from Excel",4000, Notification.Position.MIDDLE);
+            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
             singleFileUpload.clearFileList();
         });
 
@@ -216,7 +220,11 @@ public class MappingExampleView extends VerticalLayout {
         spinner.setIndeterminate(true);
         spinner.setVisible(false);
 
-        add(horl, textArea,crud);
+         Details details = new Details("details", textArea);
+         details.setOpened(false);
+
+
+        add(horl, details ,crud);
 
         //    article=new Article();
         //    article.setText("Warten auf Datei");
@@ -608,6 +616,13 @@ public class MappingExampleView extends VerticalLayout {
         System.out.println("Anzahl Zeilen im Excel: " + elaFavoritenListe.size());
 
 
+
+        Notification notification = Notification.show("To Do: Replace Grid-Data with List from Excel",4000, Notification.Position.MIDDLE);
+        notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+
+        //grid.setItems(elaFavoritenListe);
+
+
     }
 
 
@@ -776,6 +791,13 @@ public class MappingExampleView extends VerticalLayout {
 
     private void setupDataProvider() {
         CLTV_HW_MeasuresDataProvider dataProvider = new CLTV_HW_MeasuresDataProvider(cltvHwMeasureService);
+       // var anzahl = dataProvider.;
+
+        article=new Article();
+        article.setText(LocalDateTime.now().format(formatter) + ": Info: Download from Database");
+        textArea.add(article);
+
+
         crud.setDataProvider(dataProvider);
         crud.addDeleteListener(
                 deleteEvent -> dataProvider.delete(deleteEvent.getItem()));

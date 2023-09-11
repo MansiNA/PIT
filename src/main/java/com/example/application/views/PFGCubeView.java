@@ -103,6 +103,8 @@ public class PFGCubeView extends VerticalLayout {
         configureForm();
         configureLoggingArea();
 
+        configureAgentJobGrid();
+
         saveBtn.setVisible(false);
         editBtn.setVisible(true);
 
@@ -217,7 +219,11 @@ public class PFGCubeView extends VerticalLayout {
         refreshBtn.addClickListener(e->{
             //System.out.println("Refresh Button gedrückt!");
 
-            gridAgentJobs.setItems(getAgentJobs());
+            var agentJobs=getAgentJobs();
+
+            //gridAgentJobs.setItems(getAgentJobs());
+
+            gridAgentJobs.setItems(agentJobs);
             updateLastRefreshLabel();
 
         });
@@ -380,7 +386,7 @@ public class PFGCubeView extends VerticalLayout {
 
     private List<AgentJobs> getAgentJobs() {
 
-        Project project = projectService.search("PFG-Cube");
+        Project project = projectService.search("PFG_Cube");
 
 
         return agentJobsService.findbyJobName(project.getAgentjobs());
