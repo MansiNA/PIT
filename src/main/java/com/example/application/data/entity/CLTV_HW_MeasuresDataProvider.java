@@ -36,8 +36,10 @@ public class CLTV_HW_MeasuresDataProvider  extends AbstractBackEndDataProvider<C
         DATABASE = createPersonList();
     }
 
-
-
+    public CLTV_HW_MeasuresDataProvider(List<CLTV_HW_Measures> listOfCLTV_HW_Measures) {
+        //System.out.println("Im Construktor von CLTV_HW_MeasuresDataProvider...");
+        this.DATABASE = listOfCLTV_HW_Measures;
+    }
     private static List<CLTV_HW_Measures> createPersonList() {
         //return IntStream
         //        .rangeClosed(1, 50)
@@ -158,6 +160,8 @@ public class CLTV_HW_MeasuresDataProvider  extends AbstractBackEndDataProvider<C
     public void delete(CLTV_HW_Measures item) {
         DATABASE.removeIf(entity -> entity.getId().equals(item.getId()));
     }
+
+
 
 
 

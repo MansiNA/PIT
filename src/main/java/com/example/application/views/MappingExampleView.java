@@ -1,9 +1,12 @@
 package com.example.application.views;
 
+import com.example.application.data.DynamicDataSourceContextHolder;
 import com.example.application.data.entity.CLTV_HW_Measures;
 import com.example.application.data.entity.CLTV_HW_MeasuresDataProvider;
+import com.example.application.data.entity.ProjectConnection;
 import com.example.application.data.entity.TableInfo;
 import com.example.application.data.service.CLTV_HW_MeasureService;
+import com.example.application.data.service.ProjectConnectionService;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -11,6 +14,7 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.crud.BinderCrudEditor;
 import com.vaadin.flow.component.crud.Crud;
 import com.vaadin.flow.component.crud.CrudEditor;
+import com.vaadin.flow.component.crud.CrudFilter;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
@@ -32,10 +36,7 @@ import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.converter.StringToIntegerConverter;
-import com.vaadin.flow.data.provider.ConfigurableFilterDataProviderWrapper;
-import com.vaadin.flow.data.provider.DataProvider;
-import com.vaadin.flow.data.provider.ListDataProvider;
-import com.vaadin.flow.data.provider.Query;
+import com.vaadin.flow.data.provider.*;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
@@ -44,10 +45,12 @@ import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
+import javax.sql.DataSource;
 import java.io.*;
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -55,6 +58,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Route(value="MappingExample", layout = MainLayout.class)
 @PageTitle("Mapping-Example | TEF-Control")
@@ -62,17 +66,10 @@ public class MappingExampleView extends VerticalLayout {
     private String exportPath;
     private String exportFileName = "HW_Mapping.xls";
     private final CLTV_HW_MeasureService cltvHwMeasureService;
-  //  private final JdbcTemplate jdbcTemplate;
+    private final ProjectConnectionService projectConnectionService;
+    private final JdbcTemplate jdbcTemplate;
+    private List<CLTV_HW_Measures> listOfCLTVMeasures = new ArrayList<CLTV_HW_Measures>();
     private Crud<CLTV_HW_Measures> crud;
-    private String ID = "Id";
-    private String MONAT_ID = "monat_ID";
-    private String DEVICE = "device";
-    private String MEASURE_NAME = "measure_Name";
-    private String CHANNEL = "channel";
-    private String VALUE = "value";
-    //    private String PROFESSION = "profession";
-    private String EDIT_COLUMN = "vaadin-crud-edit-column";
-
     Grid<CLTV_HW_Measures> grid;
     MemoryBuffer memoryBuffer = new MemoryBuffer();
     Upload singleFileUpload = new Upload(memoryBuffer);
@@ -90,21 +87,19 @@ public class MappingExampleView extends VerticalLayout {
     Button countRows = new Button("Count Rows");
     Article article = new Article();
     String ret = "ok";
-
     private Button exportButton = new Button("Export");
     private Button downloadButton = new Button("Download");
     private Button uploadButton = new Button("Save");
     private Anchor anchor = new Anchor(getStreamResource("CLTV_HW_Mapping.xls", "default content"), "click to download");
-
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
 
     //public MappingExampleView(@Value("${csv_exportPath}") String p_exportPath, CLTV_HW_MeasureService cltvHwMeasureService, JdbcTemplate jdbcTemplate) {
-     public MappingExampleView(@Value("${csv_exportPath}") String p_exportPath, CLTV_HW_MeasureService cltvHwMeasureService) {
+     public MappingExampleView(@Value("${csv_exportPath}") String p_exportPath, CLTV_HW_MeasureService cltvHwMeasureService, ProjectConnectionService projectConnectionService, JdbcTemplate jdbcTemplate) {
 
         this.exportPath = p_exportPath;
-
         this.cltvHwMeasureService = cltvHwMeasureService;
-      //  this.jdbcTemplate = jdbcTemplate;
+        this.projectConnectionService = projectConnectionService;
+        this.jdbcTemplate = jdbcTemplate;
 
         crud = new Crud<>(CLTV_HW_Measures.class, createEditor());
         System.out.println("..........................init.............");
@@ -128,7 +123,7 @@ public class MappingExampleView extends VerticalLayout {
 
         ComboBox<String> databaseConnectionCB = new ComboBox<>();
         databaseConnectionCB.setAllowCustomValue(true);
-        databaseConnectionCB.setItems("DEMCUC5AK26", "DEWSTTWAK11", "VAZ006");
+        databaseConnectionCB.setItems("DEMCUC5AK26", "DEWSTTWAK11", "VAZ006", "TestDB","TEF","Test");
         databaseConnectionCB.setTooltipText("Select Database Connection");
         databaseConnectionCB.setValue("DEMUC5AK26" );
 
@@ -154,30 +149,60 @@ public class MappingExampleView extends VerticalLayout {
         addRowsBT.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
         replaceRowsBT.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
 
-
-
         //    countRows.addClickListener(clickEvent -> countRows());
 
+         downloadButton.addClickListener(clickEvent -> {
+            // Get the selected database connection from the ComboBox
+            String selectedDatabase = databaseConnectionCB.getValue();
 
-        downloadButton.addClickListener(clickEvent -> {
-            setupDataProvider();
+            if (selectedDatabase == null || selectedDatabase.isEmpty()) {
+                // Handle the case where no database connection is selected
+                Notification notification = Notification.show("Please select a database connection", 3000, Notification.Position.MIDDLE);
+                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            } else {
 
+                DataSource dataSource = projectConnectionService.getDataSource(selectedDatabase);
+
+                // Switch to the selected data source
+                DynamicDataSourceContextHolder.setDataSource(dataSource);
+
+                try {
+                    // Perform fetch operations using the selected data source
+                    List<CLTV_HW_Measures> fetchListOfCLTVMeasures = projectConnectionService.fetchDataFromDatabase(selectedDatabase);
+                    CLTV_HW_MeasuresDataProvider dataProvider = new CLTV_HW_MeasuresDataProvider(fetchListOfCLTVMeasures);
+                    crud.setDataProvider(dataProvider);
+                    // Clear the data source key to revert to the default data source
+                    DynamicDataSourceContextHolder.clearDataSourceKey();
+
+                    Notification notification = Notification.show(" Rows fetch successfully", 3000, Notification.Position.MIDDLE);
+                    notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+
+                } catch (Exception e) {
+                    // Handle exceptions appropriately
+                    Notification notification = Notification.show("Error during fetch: " + e.getMessage(), 4000, Notification.Position.MIDDLE);
+                    notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                }
+            }
+            //setupDataProvider();
         });
 
-        uploadButton.addClickListener(clickEvent -> {
-
-
-            //Notification notification = Notification.show("Upload not implementet yet",5000, Notification.Position.MIDDLE);
-            //notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+         uploadButton.addClickListener(clickEvent -> {
+             // Get the selected database connection from the ComboBox
+             String selectedDatabase = databaseConnectionCB.getValue();
 
             DataProvider<CLTV_HW_Measures, Void> dataProvider = (DataProvider<CLTV_HW_Measures, Void>) grid.getDataProvider();
 
             List<CLTV_HW_Measures>allItems = dataProvider.fetch(new Query<>()).collect(Collectors.toList());
 
+             DataSource dataSource = projectConnectionService.getDataSource(selectedDatabase);
+
+             // Switch to the selected data source
+             DynamicDataSourceContextHolder.setDataSource(dataSource);
+
             Notification notification = Notification.show(allItems.size() + " Rows Uploaded start",2000, Notification.Position.MIDDLE);
             notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 
-            String result=write2DB(allItems);
+            String result=projectConnectionService.write2DB(allItems, selectedDatabase);
             if (result.contains("ok")){
                 notification = Notification.show(allItems.size() + " Rows Uploaded successfully",3000, Notification.Position.MIDDLE);
                 notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
@@ -187,34 +212,38 @@ public class MappingExampleView extends VerticalLayout {
                 notification = Notification.show("Error during upload!",4000, Notification.Position.MIDDLE);
                 notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
-
-
         });
 
-
-
         addRowsBT.addClickListener(clickEvent -> {
-            System.out.println("add rows to existing rows in the grid");
-            // upload();
-            Notification notification = Notification.show("To Do: Add Grid-Data with List from Excel",4000, Notification.Position.MIDDLE);
-            notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-            singleFileUpload.clearFileList();
+            DataProvider<CLTV_HW_Measures, Void> existDataProvider = (DataProvider<CLTV_HW_Measures, Void>) grid.getDataProvider();
+            List<CLTV_HW_Measures> oldListOfCLTVMeasures = existDataProvider.fetch(new Query<>()).collect(Collectors.toList());
+
+            if (listOfCLTVMeasures != null && !listOfCLTVMeasures.isEmpty()) {
+                oldListOfCLTVMeasures.addAll(listOfCLTVMeasures);
+                CLTV_HW_MeasuresDataProvider dataProvider = new CLTV_HW_MeasuresDataProvider(oldListOfCLTVMeasures);
+                crud.setDataProvider(dataProvider);
+
+                Notification notification = Notification.show("New data was appended with grid data successfully.", 4000, Notification.Position.MIDDLE);
+                notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            } else {
+                Notification notification = Notification.show("No data to display.", 4000, Notification.Position.MIDDLE);
+                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            }
+            replaceRowsBT.setEnabled(false);
+            //singleFileUpload.clearFileList();
         });
 
         replaceRowsBT.addClickListener(clickEvent -> {
-            try {
-                System.out.println("replace all rows in the grid");
-                upload();
-                singleFileUpload.clearFileList();
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+            if (listOfCLTVMeasures != null && !listOfCLTVMeasures.isEmpty()) {
+                CLTV_HW_MeasuresDataProvider dataProvider = new CLTV_HW_MeasuresDataProvider(listOfCLTVMeasures);
+                crud.setDataProvider(dataProvider);
+                Notification notification = Notification.show("New data was replaced with grid data successfully.", 4000, Notification.Position.MIDDLE);
+                notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            } else {
+                Notification notification = Notification.show("No data to display.", 4000, Notification.Position.MIDDLE);
+                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
+            addRowsBT.setEnabled(false);
         });
 
         spinner.setIndeterminate(true);
@@ -223,14 +252,7 @@ public class MappingExampleView extends VerticalLayout {
          Details details = new Details("details", textArea);
          details.setOpened(false);
 
-
         add(horl, details ,crud);
-
-        //    article=new Article();
-        //    article.setText("Warten auf Datei");
-        //    textArea.add(article);
-
-
     }
 
     public StreamResource getStreamResource(String filename, String content) {
@@ -451,181 +473,6 @@ public class MappingExampleView extends VerticalLayout {
         return stream;
     }
 
-    private void upload() throws SQLException, IOException, ClassNotFoundException, InterruptedException {
-        System.out.println("in upload function");
-        if(fileName.isEmpty() || fileName.length()==0)
-        {
-            article=new Article();
-            article.setText(LocalDateTime.now().format(formatter) + ": Error: Keine Datei angegeben!");
-            textArea.add(article);
-            return;
-        }
-
-        if(!mimeType.contains("application/vnd.ms-excel"))
-        {
-            article=new Article();
-            article.setText(LocalDateTime.now().format(formatter) + ": Error: ungültiges Dateiformat!");
-            textArea.add(article);
-            return;
-        }
-
-        System.out.println("Excel import: "+  fileName + " => Mime-Type: " + mimeType  + " Größe " + contentLength + " Byte");
-        textArea.setText(LocalDateTime.now().format(formatter) + ": Info: Verarbeite Datei: " + fileName + " (" + contentLength + " Byte)");
-
-
-        //   FileInputStream input_document = new FileInputStream(new File("C:\\tmp\\ELA_FAVORITEN.XLS"));
-        /* Load workbook */
-        addRowsBT.setEnabled(false);
-        replaceRowsBT.setEnabled(false);
-        //spinner.setVisible(true);
-
-        HSSFWorkbook my_xls_workbook = new HSSFWorkbook(fileData);
-//    HSSFWorkbook my_xls_workbook = new HSSFWorkbook(input_document);
-        /* Load worksheet */
-        HSSFSheet my_worksheet = my_xls_workbook.getSheetAt(0);
-        // we loop through and insert data
-        Iterator<Row> rowIterator = my_worksheet.iterator();
-
-        List<CLTV_HW_Measures> elaFavoritenListe = new ArrayList<CLTV_HW_Measures>();
-
-        Integer RowNumber=0;
-        Boolean isError=false;
-
-        while(rowIterator.hasNext() && !isError)
-        {
-            CLTV_HW_Measures elaFavoriten = new CLTV_HW_Measures();
-            Row row = rowIterator.next();
-            RowNumber++;
-            //   System.out.println("Zeile:" + RowNumber.toString());
-
-            Iterator<Cell> cellIterator = row.cellIterator();
-            while(cellIterator.hasNext()) {
-
-                if(RowNumber==1) //Überschrift nicht betrachten
-                {
-                    break;
-                }
-
-                Cell cell = cellIterator.next();
-
-                try {
-                    elaFavoriten.setId(checkCellNumeric(cell, RowNumber,"ID"));
-                }
-                catch(Exception e)
-                {
-                    article=new Article();
-                    article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte ID nicht vorhanden!");
-                    textArea.add(article);
-                    isError=true;
-                    break;
-                }
-
-                try {
-                    cell = cellIterator.next();
-                    elaFavoriten.setMonat_ID(checkCellNumeric(cell, RowNumber,"Monat_ID"));
-                 //   elaFavoriten.setMonat_ID(checkCellDouble(cell, RowNumber,"Monat_ID"));
-                }
-                catch(Exception e)
-                {
-                    article=new Article();
-                    article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte Monat_ID nicht vorhanden!");
-                    textArea.add(article);
-                    isError=true;
-                    break;
-                }
-
-                try {
-                    cell = cellIterator.next();
-                    elaFavoriten.setDevice(checkCellString(cell, RowNumber,"Device"));
-                }
-                catch(Exception e)
-                {
-                    article=new Article();
-                    article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte Device nicht vorhanden! " + e.getMessage());
-                    textArea.add(article);
-                    isError=true;
-                    break;
-                }
-
-                try {
-                    cell = cellIterator.next();
-                    elaFavoriten.setMeasure_Name(checkCellString(cell, RowNumber,"Measure_Name"));
-                }
-                catch(Exception e)
-                {
-                    article=new Article();
-                    article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte Measure_Name nicht vorhanden!");
-                    textArea.add(article);
-                    isError=true;
-                    break;
-                }
-
-
-
-                try {
-                    cell = cellIterator.next();
-                    elaFavoriten.setChannel(checkCellString(cell, RowNumber,"Channel"));
-                }
-                catch(Exception e)
-                {
-                    article=new Article();
-                    article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte Channel nicht vorhanden!");
-                    textArea.add(article);
-                    isError=true;
-                    break;
-                }
-
-
-                try {
-                    cell = cellIterator.next();
-                    elaFavoriten.setValue(checkCellNumeric(cell, RowNumber,"Value").toString());
-                }
-                catch(Exception e)
-                {
-                    article=new Article();
-                    article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte value nicht vorhanden!");
-                    textArea.add(article);
-                    isError=true;
-                    break;
-                }
-
-
-
-                elaFavoritenListe.add(elaFavoriten);
-                System.out.println(elaFavoritenListe.size()+".............8");
-            }
-
-        }
-
-        if(isError)
-        {
-            //    button.setEnabled(true);
-            spinner.setVisible(false);
-            fileName="";
-            return;
-        }
-
-        //textArea.setValue(textArea.getValue() + "\n" + Instant.now() + ": Start Upload to DB");
-        article=new Article();
-        article.getStyle().set("white-space","pre-line");
-        article.add(LocalDateTime.now().format(formatter) + ": Info: Anzahl Zeilen: " + elaFavoritenListe.size());
-        article.add("\n");
-        article.add(LocalDateTime.now().format(formatter) + ": Info: Start Upload to DB");
-        textArea.add(article);
-
-        System.out.println("Anzahl Zeilen im Excel: " + elaFavoritenListe.size());
-
-
-
-        Notification notification = Notification.show("To Do: Replace Grid-Data with List from Excel",4000, Notification.Position.MIDDLE);
-        notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
-
-        //grid.setItems(elaFavoritenListe);
-
-
-    }
-
-
     private Double checkCellDouble(Cell cell, Integer zeile, String spalte) {
 
         if (cell.getCellType()!=Cell.CELL_TYPE_NUMERIC)
@@ -724,11 +571,171 @@ public class MappingExampleView extends VerticalLayout {
             addRowsBT.setEnabled(true);
             replaceRowsBT.setEnabled(true);
             textArea.setText("Warten auf Button \"Hochladen\"");
-         //   detailsText.setValue("Weitere Ladeinformationen bzgl. >>" + fileName + "<<");
-            // Do something with the file data
-            // processFile(fileData, fileName, contentLength, mimeType);
+
+            listOfCLTVMeasures = parseExcelFile(fileData, fileName);
+
         });
         System.out.println("setup uploader................over");
+    }
+
+    public List<CLTV_HW_Measures> parseExcelFile(InputStream fileData, String fileName) {
+        List<CLTV_HW_Measures> listOfCLTVMeasures = new ArrayList<>();
+        try {
+            if(fileName.isEmpty() || fileName.length()==0)
+            {
+                article=new Article();
+                article.setText(LocalDateTime.now().format(formatter) + ": Error: Keine Datei angegeben!");
+                textArea.add(article);
+            }
+
+            if(!mimeType.contains("application/vnd.ms-excel"))
+            {
+                article=new Article();
+                article.setText(LocalDateTime.now().format(formatter) + ": Error: ungültiges Dateiformat!");
+                textArea.add(article);
+            }
+
+            System.out.println("Excel import: "+  fileName + " => Mime-Type: " + mimeType  + " Größe " + contentLength + " Byte");
+            textArea.setText(LocalDateTime.now().format(formatter) + ": Info: Verarbeite Datei: " + fileName + " (" + contentLength + " Byte)");
+
+
+            //addRowsBT.setEnabled(false);
+            //replaceRowsBT.setEnabled(false);
+            //spinner.setVisible(true);
+
+            HSSFWorkbook my_xls_workbook = new HSSFWorkbook(fileData);
+            HSSFSheet my_worksheet = my_xls_workbook.getSheetAt(0);
+            Iterator<Row> rowIterator = my_worksheet.iterator();
+
+            Integer RowNumber=0;
+            Boolean isError=false;
+
+            while(rowIterator.hasNext() && !isError)
+            {
+                CLTV_HW_Measures elaFavoriten = new CLTV_HW_Measures();
+                Row row = rowIterator.next();
+                RowNumber++;
+
+                Iterator<Cell> cellIterator = row.cellIterator();
+                while(cellIterator.hasNext()) {
+
+                    if(RowNumber==1) //Überschrift nicht betrachten
+                    {
+                        break;
+                    }
+
+                    Cell cell = cellIterator.next();
+
+                    try {
+                        elaFavoriten.setId(checkCellNumeric(cell, RowNumber,"ID"));
+                    }
+                    catch(Exception e)
+                    {
+                        article=new Article();
+                        article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte ID nicht vorhanden!");
+                        textArea.add(article);
+                        isError=true;
+                        break;
+                    }
+
+                    try {
+                        cell = cellIterator.next();
+                        elaFavoriten.setMonat_ID(checkCellNumeric(cell, RowNumber,"Monat_ID"));
+                    }
+                    catch(Exception e)
+                    {
+                        article=new Article();
+                        article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte Monat_ID nicht vorhanden!");
+                        textArea.add(article);
+                        isError=true;
+                        break;
+                    }
+
+                    try {
+                        cell = cellIterator.next();
+                        elaFavoriten.setDevice(checkCellString(cell, RowNumber,"Device"));
+                    }
+                    catch(Exception e)
+                    {
+                        article=new Article();
+                        article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte Device nicht vorhanden! " + e.getMessage());
+                        textArea.add(article);
+                        isError=true;
+                        break;
+                    }
+
+                    try {
+                        cell = cellIterator.next();
+                        elaFavoriten.setMeasure_Name(checkCellString(cell, RowNumber,"Measure_Name"));
+                    }
+                    catch(Exception e)
+                    {
+                        article=new Article();
+                        article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte Measure_Name nicht vorhanden!");
+                        textArea.add(article);
+                        isError=true;
+                        break;
+                    }
+
+
+
+                    try {
+                        cell = cellIterator.next();
+                        elaFavoriten.setChannel(checkCellString(cell, RowNumber,"Channel"));
+                    }
+                    catch(Exception e)
+                    {
+                        article=new Article();
+                        article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte Channel nicht vorhanden!");
+                        textArea.add(article);
+                        isError=true;
+                        break;
+                    }
+
+
+                    try {
+                        cell = cellIterator.next();
+                        elaFavoriten.setValue(checkCellNumeric(cell, RowNumber,"Value").toString());
+                    }
+                    catch(Exception e)
+                    {
+                        article=new Article();
+                        article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte value nicht vorhanden!");
+                        textArea.add(article);
+                        isError=true;
+                        break;
+                    }
+
+
+
+                    listOfCLTVMeasures.add(elaFavoriten);
+                    System.out.println(listOfCLTVMeasures.size()+".............parse");
+                }
+
+            }
+
+            if(isError)
+            {
+                //    button.setEnabled(true);
+                spinner.setVisible(false);
+                fileName="";
+            }
+
+            article=new Article();
+            article.getStyle().set("white-space","pre-line");
+            article.add(LocalDateTime.now().format(formatter) + ": Info: Anzahl Zeilen: " + listOfCLTVMeasures.size());
+            article.add("\n");
+            article.add(LocalDateTime.now().format(formatter) + ": Info: Start Upload to DB");
+            textArea.add(article);
+
+            System.out.println("Anzahl Zeilen im Excel: " + listOfCLTVMeasures.size());
+
+            return listOfCLTVMeasures;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+
     }
 
 
@@ -761,29 +768,23 @@ public class MappingExampleView extends VerticalLayout {
     }
 
     private void setupGrid() {
-        grid = crud.getGrid();
-    //    grid.addColumn(CLTV_HW_Measures::getMonat_ID).setHeader("Monat");
+         String ID = "Id";
 
+         String MONAT_ID = "monat_ID";
 
-    /*    // Only show these columns (all columns shown by default):
-        List<String> visibleColumns = Arrays.asList(MONAT_ID, DEVICE, MEASURE_NAME, CHANNEL, VALUE, EDIT_COLUMN);
-       // List<String> visibleColumns = Arrays.asList(MONAT_ID, DEVICE, MEASURE_NAME, CHANNEL, EDIT_COLUMN);
-        grid.getColumns().forEach(column -> {
-            String key = column.getKey();
-            //System.out.println("Key: " + key);
-            if (!visibleColumns.contains(key)) {
+         String DEVICE = "device";
 
-                  System.out.println("entferne column: " + column);
-                  grid.removeColumn(column);
+         String MEASURE_NAME = "measure_Name";
 
-            }
-        });
-*/
+         String CHANNEL = "channel";
 
-        grid.getColumnByKey("id").setHeader("ID").setWidth("10px");
+         String VALUE = "value";
+         String EDIT_COLUMN = "vaadin-crud-edit-column";
+         grid = crud.getGrid();
+         grid.getColumnByKey("id").setHeader("ID").setWidth("10px");
 
         // Reorder the columns (alphabetical by default)
-        grid.setColumnOrder( grid.getColumnByKey("id"), grid.getColumnByKey(MONAT_ID), grid.getColumnByKey(DEVICE), grid.getColumnByKey(MEASURE_NAME), grid.getColumnByKey(CHANNEL)
+         grid.setColumnOrder( grid.getColumnByKey("id"), grid.getColumnByKey(MONAT_ID), grid.getColumnByKey(DEVICE), grid.getColumnByKey(MEASURE_NAME), grid.getColumnByKey(CHANNEL)
                 , grid.getColumnByKey(VALUE)
                 , grid.getColumnByKey(EDIT_COLUMN));
 
@@ -803,11 +804,9 @@ public class MappingExampleView extends VerticalLayout {
                 deleteEvent -> dataProvider.delete(deleteEvent.getItem()));
         crud.addSaveListener(
 
-
                 saveEvent -> {
                     System.out.println("geänderte ID: " + saveEvent.getItem().getId());
                     //dataProvider.persist(saveEvent.getItem());
-
                 });
   //      crud.addEditListener(e -> System.out.println("Edit" + e.getItem().getId()));
     }
