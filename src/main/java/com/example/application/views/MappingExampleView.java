@@ -77,6 +77,7 @@ public class MappingExampleView extends VerticalLayout {
     String fileName = "";
     long contentLength = 0;
     String mimeType = "";
+    private String selectedDbName;
     Button addRowsBT = new Button("Add Rows");
     Button replaceRowsBT = new Button("Replace Rows");
     Div textArea = new Div();
@@ -123,9 +124,15 @@ public class MappingExampleView extends VerticalLayout {
 
         ComboBox<String> databaseConnectionCB = new ComboBox<>();
         databaseConnectionCB.setAllowCustomValue(true);
-        databaseConnectionCB.setItems("DEMCUC5AK26", "DEWSTTWAK11", "VAZ006", "TestDB","TEF","Test");
+
+        List<ProjectConnection> listOfProjectConnections = projectConnectionService.findAll();
+         databaseConnectionCB.setItems(listOfProjectConnections.stream()
+                 .map(ProjectConnection::getName)
+                 .collect(Collectors.toList())
+         );
         databaseConnectionCB.setTooltipText("Select Database Connection");
-        databaseConnectionCB.setValue("DEMUC5AK26" );
+        databaseConnectionCB.setValue(listOfProjectConnections.get(0).getName());
+        selectedDbName = listOfProjectConnections.get(0).getName();
 
         horl.add(databaseConnectionCB, downloadButton, uploadButton, singleFileUpload, verl, exportButton, anchor);
         horl.setAlignItems(Alignment.CENTER);
@@ -150,7 +157,10 @@ public class MappingExampleView extends VerticalLayout {
         replaceRowsBT.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
 
         //    countRows.addClickListener(clickEvent -> countRows());
-
+         databaseConnectionCB.addValueChangeListener(event -> {
+             selectedDbName = event.getValue();
+             System.out.println("--------------selectedDbName "+ selectedDbName);
+         });
          downloadButton.addClickListener(clickEvent -> {
             // Get the selected database connection from the ComboBox
             String selectedDatabase = databaseConnectionCB.getValue();
@@ -183,7 +193,6 @@ public class MappingExampleView extends VerticalLayout {
                     notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
                 }
             }
-            //setupDataProvider();
         });
 
          uploadButton.addClickListener(clickEvent -> {
@@ -230,6 +239,7 @@ public class MappingExampleView extends VerticalLayout {
                 notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
             replaceRowsBT.setEnabled(false);
+            addRowsBT.setEnabled(false);
             //singleFileUpload.clearFileList();
         });
 
@@ -244,6 +254,7 @@ public class MappingExampleView extends VerticalLayout {
                 notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
             }
             addRowsBT.setEnabled(false);
+            replaceRowsBT.setEnabled(false);
         });
 
         spinner.setIndeterminate(true);
@@ -261,15 +272,12 @@ public class MappingExampleView extends VerticalLayout {
     }
 
     private void setUpExportButton() {
-        System.out.println("export..start.....");
         exportButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
         exportButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
         exportButton.addClickListener(clickEvent -> {
             System.out.println("export..click.....");
             Notification.show("Exportiere Daten ");
-            //System.out.println("aktuelle_SQL:" + aktuelle_SQL);
             try {
-                //generateExcel(exportPath + exportFileName, "SELECT [id],[monat_id],[device],[measure_name],[channel],[value] FROM [TEF].[dbo].[cltv_hw_measures]");
                 generateAndExportExcel(exportPath + exportFileName);
 
                 File file = new File(exportPath + exportFileName);
@@ -278,7 +286,6 @@ public class MappingExampleView extends VerticalLayout {
                 anchor.setHref(streamResource);
                 anchor.setEnabled(true);
                 exportButton.setEnabled(false);
-                //      download("c:\\tmp\\" + aktuelle_Tabelle + ".xls");
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -288,8 +295,7 @@ public class MappingExampleView extends VerticalLayout {
     }
     public void generateAndExportExcel(String file) {
         try {
-            // Fetch data using service
-            List<CLTV_HW_Measures> dataToExport = cltvHwMeasureService.findAll();
+            List<CLTV_HW_Measures> dataToExport = projectConnectionService.fetchDataFromDatabase(selectedDbName);
 
             // Create a new Excel workbook and sheet using Apache POI
             Workbook workBook = new HSSFWorkbook();
@@ -334,133 +340,6 @@ public class MappingExampleView extends VerticalLayout {
             throw new RuntimeException(e);
         }
     }
-    private void generateExcel(String file, String query) throws IOException {
-
-
-        try {
-
-            Connection conn = DriverManager.getConnection("jdbc:sqlserver://128.140.47.43;databaseName=PIT;encrypt=true;trustServerCertificate=true", "PIT", "PIT!20230904");
-
-
-
-            //   DriverManager.registerDriver(new oracle.jdbc.driver.OracleDriver());
-
-
-            PreparedStatement stmt=null;
-            //Workbook
-            HSSFWorkbook workBook=new HSSFWorkbook();
-            HSSFSheet sheet1=null;
-
-            //Cell
-            Cell c=null;
-
-            CellStyle cs=workBook.createCellStyle();
-            HSSFFont f =workBook.createFont();
-            f.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
-            f.setFontHeightInPoints((short) 12);
-            cs.setFont(f);
-
-
-            sheet1=workBook.createSheet("Sheet1");
-
-
-            // String query="select  EMPNO, ENAME, JOB, MGR, HIREDATE, SAL, COMM, DEPTNO, WORK_CITY, WORK_COUNTRY from APEX_040000.WWV_DEMO_EMP";
-            stmt=conn.prepareStatement(query);
-            ResultSet rs=stmt.executeQuery();
-
-            ResultSetMetaData metaData=rs.getMetaData();
-            int colCount=metaData.getColumnCount();
-
-            LinkedHashMap<Integer, TableInfo> hashMap=new LinkedHashMap<Integer, TableInfo>();
-
-            List<CLTV_HW_Measures> dataToExport = cltvHwMeasureService.findAll();
-            System.out.println(dataToExport.size()+".....yes export");
-
-            for(int i=0;i<colCount;i++){
-                TableInfo tableInfo=new TableInfo();
-                tableInfo.setFieldName(metaData.getColumnName(i+1).trim());
-                tableInfo.setFieldText(metaData.getColumnLabel(i+1));
-                tableInfo.setFieldSize(metaData.getPrecision(i+1));
-                tableInfo.setFieldDecimal(metaData.getScale(i+1));
-                tableInfo.setFieldType(metaData.getColumnType(i+1));
-                //     tableInfo.setCellStyle(getCellAttributes(workBook, c, tableInfo));
-
-                hashMap.put(i, tableInfo);
-            }
-
-            //Row and Column Indexes
-            int idx=0;
-            int idy=0;
-
-            HSSFRow row=sheet1.createRow(idx);
-            TableInfo tableInfo=new TableInfo();
-
-            Iterator<Integer> iterator=hashMap.keySet().iterator();
-
-            while(iterator.hasNext()){
-                Integer key=(Integer)iterator.next();
-
-                tableInfo=hashMap.get(key);
-                c=row.createCell(idy);
-                c.setCellValue(tableInfo.getFieldText());
-                c.setCellStyle(cs);
-                if(tableInfo.getFieldSize() > tableInfo.getFieldText().trim().length()){
-                    sheet1.setColumnWidth(idy, (tableInfo.getFieldSize()* 10));
-                }
-                else {
-                    sheet1.setColumnWidth(idy, (tableInfo.getFieldText().trim().length() * 5));
-                }
-                idy++;
-            }
-
-            while (rs.next()) {
-
-                idx++;
-                row = sheet1.createRow(idx);
-                //  System.out.println(idx);
-                for (int i = 0; i < colCount; i++) {
-
-                    c = row.createCell(i);
-                    tableInfo = hashMap.get(i);
-
-                    switch (tableInfo.getFieldType()) {
-                        case 1:
-                            c.setCellValue(rs.getString(i+1));
-                            break;
-                        case 2:
-                            c.setCellValue(rs.getDouble(i+1));
-                            break;
-                        case 3:
-                            c.setCellValue(rs.getDouble(i+1));
-                            break;
-                        default:
-                            c.setCellValue(rs.getString(i+1));
-                            break;
-                    }
-                    c.setCellStyle(tableInfo.getCellStyle());
-                }
-
-            }
-            rs.close();
-            stmt.close();
-            conn.close();
-
-            // String path="c:\\tmp\\test.xls";
-
-            FileOutputStream fileOut = new FileOutputStream(file);
-
-            workBook.write(fileOut);
-            fileOut.close();
-
-
-        } catch (SQLException | FileNotFoundException e) {
-            System.out.println("Error in Method generateExcel(String file, String query) file: " + file + " query: "  + query);
-            e.printStackTrace();
-        }
-    }
-
-
-
 
     private InputStream getStream(File file) {
         FileInputStream stream = null;
@@ -738,7 +617,6 @@ public class MappingExampleView extends VerticalLayout {
 
     }
 
-
     private CrudEditor<CLTV_HW_Measures> createEditor() {
 
         IntegerField ID = new IntegerField  ("Id");
@@ -808,7 +686,6 @@ public class MappingExampleView extends VerticalLayout {
                     System.out.println("geänderte ID: " + saveEvent.getItem().getId());
                     //dataProvider.persist(saveEvent.getItem());
                 });
-  //      crud.addEditListener(e -> System.out.println("Edit" + e.getItem().getId()));
     }
 
 }
