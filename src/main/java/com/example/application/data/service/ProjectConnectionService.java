@@ -81,6 +81,7 @@ public class ProjectConnectionService {
     public String write2DB(List<CLTV_HW_Measures> data, String selectedDatabase) {
         DataSource dataSource = getDataSource(selectedDatabase);
         jdbcTemplate = new JdbcTemplate(dataSource);
+        
         try {
             String sqlDelete = "DELETE FROM CLTV_HW_Measures";
             jdbcTemplate.update(sqlDelete);

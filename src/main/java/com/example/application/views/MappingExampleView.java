@@ -112,11 +112,8 @@ public class MappingExampleView extends VerticalLayout {
 
         crud.setHeight("600px");
 
-        //add(crud);
-
         HorizontalLayout horl = new HorizontalLayout();
         horl.setWidthFull();
-      //  horl.setWidth("800px");
 
         VerticalLayout verl = new VerticalLayout();
         verl.add(addRowsBT, replaceRowsBT, spinner);
@@ -166,7 +163,6 @@ public class MappingExampleView extends VerticalLayout {
             String selectedDatabase = databaseConnectionCB.getValue();
 
             if (selectedDatabase == null || selectedDatabase.isEmpty()) {
-                // Handle the case where no database connection is selected
                 Notification notification = Notification.show("Please select a database connection", 3000, Notification.Position.MIDDLE);
                 notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
             } else {
@@ -188,7 +184,6 @@ public class MappingExampleView extends VerticalLayout {
                     notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 
                 } catch (Exception e) {
-                    // Handle exceptions appropriately
                     Notification notification = Notification.show("Error during fetch: " + e.getMessage(), 4000, Notification.Position.MIDDLE);
                     notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
                 }
