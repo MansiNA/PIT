@@ -81,17 +81,18 @@ public class ProjectConnectionService {
     public String write2DB(List<CLTV_HW_Measures> data, String selectedDatabase) {
         DataSource dataSource = getDataSource(selectedDatabase);
         jdbcTemplate = new JdbcTemplate(dataSource);
-        
+
         try {
             String sqlDelete = "DELETE FROM CLTV_HW_Measures";
             jdbcTemplate.update(sqlDelete);
 
-            String sqlInsert = "INSERT INTO CLTV_HW_Measures (monat_id, device, measure_name, channel, value) VALUES (?, ?, ?, ?, ?)";
+            String sqlInsert = "INSERT INTO CLTV_HW_Measures (id, monat_id, device, measure_name, channel, value) VALUES (?, ?, ?, ?, ?, ?)";
 
             // Loop through the data and insert new records
             for (CLTV_HW_Measures item : data) {
                 jdbcTemplate.update(
                         sqlInsert,
+                        item.getId(),
                         item.getMonat_ID(),
                         item.getDevice(),
                         item.getMeasure_Name(),
