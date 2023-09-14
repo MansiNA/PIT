@@ -22,34 +22,25 @@ import static java.util.stream.Collectors.toList;
 public class CLTV_HW_MeasuresDataProvider  extends AbstractBackEndDataProvider<CLTV_HW_Measures, CrudFilter> {
 
     // A real app should hook up something like JPA
-
-
-    private static final String[] FIRSTS = {"James", "Mary", "John", "Patricia", "Robert", "Jennifer"};
-    private static final String[] LASTS = {"Smith", "Johnson", "Williams", "Brown"};
     private static CLTV_HW_MeasureService cltvHwMeasureService;
-
     final List<CLTV_HW_Measures> DATABASE;
 
     public CLTV_HW_MeasuresDataProvider(CLTV_HW_MeasureService cltvHwMeasureService) {
-        //System.out.println("Im Construktor von CLTV_HW_MeasuresDataProvider...");
         this.cltvHwMeasureService = cltvHwMeasureService;
-        DATABASE = createPersonList();
+        DATABASE = createCltv_hw_MeasureList();
     }
 
     public CLTV_HW_MeasuresDataProvider(List<CLTV_HW_Measures> listOfCLTV_HW_Measures) {
-        //System.out.println("Im Construktor von CLTV_HW_MeasuresDataProvider...");
         this.DATABASE = listOfCLTV_HW_Measures;
     }
-    private static List<CLTV_HW_Measures> createPersonList() {
+    private static List<CLTV_HW_Measures> createCltv_hw_MeasureList() {
         //return IntStream
         //        .rangeClosed(1, 50)
         //        .mapToObj(i -> new CLTV_HW_Measures(i, 20230106, "Device A", "Measure B", "Channel XY", 3L ))
         //        .collect(toList());
 
         List<CLTV_HW_Measures> xx = cltvHwMeasureService.findAllProducts("");
-
         return xx;
-
     }
 
 
@@ -132,15 +123,13 @@ public class CLTV_HW_MeasuresDataProvider  extends AbstractBackEndDataProvider<C
     }
 
     public void persist(CLTV_HW_Measures item) {
+
         if (item.getId() == null) {
             item.setId(DATABASE.stream().map(CLTV_HW_Measures::getId).max(naturalOrder())
                     .orElse(0) + 1);
         }
 
-        //cltvHwMeasureService.update(item,item.getValue());
-        cltvHwMeasureService.update(item,item.getValue());
-
-/*        final Optional<CLTV_HW_Measures> existingItem = find(item.getId());
+        final Optional<CLTV_HW_Measures> existingItem = find(item.getId());
         if (existingItem.isPresent()) {
             int position = DATABASE.indexOf(existingItem.get());
             DATABASE.remove(existingItem.get());
@@ -148,8 +137,6 @@ public class CLTV_HW_MeasuresDataProvider  extends AbstractBackEndDataProvider<C
         } else {
             DATABASE.add(item);
         }
-
- */
     }
 
     Optional<CLTV_HW_Measures> find(Integer id) {
@@ -160,16 +147,4 @@ public class CLTV_HW_MeasuresDataProvider  extends AbstractBackEndDataProvider<C
     public void delete(CLTV_HW_Measures item) {
         DATABASE.removeIf(entity -> entity.getId().equals(item.getId()));
     }
-
-
-
-
-
-
-
-
-
-
-
-
 }

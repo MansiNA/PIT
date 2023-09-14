@@ -70,7 +70,7 @@ public class MappingExampleView extends VerticalLayout {
     private final JdbcTemplate jdbcTemplate;
     private List<CLTV_HW_Measures> listOfCLTVMeasures = new ArrayList<CLTV_HW_Measures>();
     private Crud<CLTV_HW_Measures> crud;
-    Grid<CLTV_HW_Measures> grid;
+    private Grid<CLTV_HW_Measures> grid;
     MemoryBuffer memoryBuffer = new MemoryBuffer();
     Upload singleFileUpload = new Upload(memoryBuffer);
     InputStream fileData;
@@ -103,10 +103,8 @@ public class MappingExampleView extends VerticalLayout {
         this.jdbcTemplate = jdbcTemplate;
 
         crud = new Crud<>(CLTV_HW_Measures.class, createEditor());
-        System.out.println("..........................init.............");
 
         setupGrid();
-
         setupUploader();
         setUpExportButton();
 
@@ -153,30 +151,30 @@ public class MappingExampleView extends VerticalLayout {
         addRowsBT.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
         replaceRowsBT.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
 
-        //    countRows.addClickListener(clickEvent -> countRows());
          databaseConnectionCB.addValueChangeListener(event -> {
              selectedDbName = event.getValue();
              System.out.println("--------------selectedDbName "+ selectedDbName);
          });
+
          downloadButton.addClickListener(clickEvent -> {
             // Get the selected database connection from the ComboBox
-            String selectedDatabase = databaseConnectionCB.getValue();
 
-            if (selectedDatabase == null || selectedDatabase.isEmpty()) {
+            if (selectedDbName == null || selectedDbName.isEmpty()) {
                 Notification notification = Notification.show("Please select a database connection", 3000, Notification.Position.MIDDLE);
                 notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
             } else {
 
-                DataSource dataSource = projectConnectionService.getDataSource(selectedDatabase);
+                DataSource dataSource = projectConnectionService.getDataSource(selectedDbName);
 
                 // Switch to the selected data source
                 DynamicDataSourceContextHolder.setDataSource(dataSource);
 
                 try {
                     // Perform fetch operations using the selected data source
-                    List<CLTV_HW_Measures> fetchListOfCLTVMeasures = projectConnectionService.fetchDataFromDatabase(selectedDatabase);
+                    List<CLTV_HW_Measures> fetchListOfCLTVMeasures = projectConnectionService.fetchDataFromDatabase(selectedDbName);
                     CLTV_HW_MeasuresDataProvider dataProvider = new CLTV_HW_MeasuresDataProvider(fetchListOfCLTVMeasures);
                     crud.setDataProvider(dataProvider);
+                    setupDataProviderEvent();
                     // Clear the data source key to revert to the default data source
                     DynamicDataSourceContextHolder.clearDataSourceKey();
 
@@ -191,14 +189,10 @@ public class MappingExampleView extends VerticalLayout {
         });
 
          uploadButton.addClickListener(clickEvent -> {
-             // Get the selected database connection from the ComboBox
-             String selectedDatabase = databaseConnectionCB.getValue();
 
-            DataProvider<CLTV_HW_Measures, Void> dataProvider = (DataProvider<CLTV_HW_Measures, Void>) grid.getDataProvider();
+            List<CLTV_HW_Measures>allItems = getDataProviderAllItems();
 
-            List<CLTV_HW_Measures>allItems = dataProvider.fetch(new Query<>()).collect(Collectors.toList());
-
-             DataSource dataSource = projectConnectionService.getDataSource(selectedDatabase);
+             DataSource dataSource = projectConnectionService.getDataSource(selectedDbName);
 
              // Switch to the selected data source
              DynamicDataSourceContextHolder.setDataSource(dataSource);
@@ -206,7 +200,7 @@ public class MappingExampleView extends VerticalLayout {
             Notification notification = Notification.show(allItems.size() + " Rows Uploaded start",2000, Notification.Position.MIDDLE);
             notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
 
-            String result=projectConnectionService.write2DB(allItems, selectedDatabase);
+            String result=projectConnectionService.write2DB(allItems, selectedDbName);
             if (result.contains("ok")){
                 notification = Notification.show(allItems.size() + " Rows Uploaded successfully",3000, Notification.Position.MIDDLE);
                 notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
@@ -219,11 +213,15 @@ public class MappingExampleView extends VerticalLayout {
         });
 
         addRowsBT.addClickListener(clickEvent -> {
-            DataProvider<CLTV_HW_Measures, Void> existDataProvider = (DataProvider<CLTV_HW_Measures, Void>) grid.getDataProvider();
-            List<CLTV_HW_Measures> oldListOfCLTVMeasures = existDataProvider.fetch(new Query<>()).collect(Collectors.toList());
+            List<CLTV_HW_Measures> oldListOfCLTVMeasures = getDataProviderAllItems();
 
             if (listOfCLTVMeasures != null && !listOfCLTVMeasures.isEmpty()) {
-                oldListOfCLTVMeasures.addAll(listOfCLTVMeasures);
+                List<CLTV_HW_Measures> uniqueItems = listOfCLTVMeasures.stream()
+                        .filter(newItem -> oldListOfCLTVMeasures.stream()
+                                .noneMatch(existingItem -> existingItem.getId().equals(newItem.getId())))
+                        .collect(Collectors.toList());
+
+                oldListOfCLTVMeasures.addAll(uniqueItems);
                 CLTV_HW_MeasuresDataProvider dataProvider = new CLTV_HW_MeasuresDataProvider(oldListOfCLTVMeasures);
                 crud.setDataProvider(dataProvider);
 
@@ -365,21 +363,9 @@ public class MappingExampleView extends VerticalLayout {
 
     }
 
-    private String write2DB(List<CLTV_HW_Measures> elaFavoritenListe) {
-        try {
-            System.out.println("good........"+elaFavoritenListe.size());
-            cltvHwMeasureService.saveAll(elaFavoritenListe);
-            return "ok";
-        } catch (Exception e) {
-            System.out.println("Exception: " + e.getMessage());
-            return e.getMessage();
-        }
-    }
-
     private String checkCellString(Cell cell, Integer zeile, String spalte) {
 
         try{
-
 
             if (cell.getCellType()!=Cell.CELL_TYPE_STRING && !cell.getStringCellValue().isEmpty())
             {
@@ -614,14 +600,14 @@ public class MappingExampleView extends VerticalLayout {
 
     private CrudEditor<CLTV_HW_Measures> createEditor() {
 
-        IntegerField ID = new IntegerField  ("Id");
+        IntegerField id = new IntegerField  ("Id");
         TextField monat_ID = new TextField ("Monat_ID");
         TextField device = new TextField("Device");
         TextField measure_name = new TextField("Measure Name");
         TextField channel = new TextField("Channel");
         TextField value = new TextField("Value");
 
-        FormLayout editForm = new FormLayout(ID, monat_ID, device, measure_name, channel, value);
+        FormLayout editForm = new FormLayout(id, monat_ID, device, measure_name, channel, value);
 
         Binder<CLTV_HW_Measures> binder = new Binder<>(CLTV_HW_Measures.class);
         binder.forField(monat_ID).withNullRepresentation("202301").withConverter(new StringToIntegerConverter("Not a Number")).asRequired().bind(CLTV_HW_Measures::getMonat_ID, CLTV_HW_Measures::setMonat_ID);
@@ -634,7 +620,7 @@ public class MappingExampleView extends VerticalLayout {
                 CLTV_HW_Measures::setChannel);
         binder.forField(value).asRequired().bind(CLTV_HW_Measures::getValue,
                 CLTV_HW_Measures::setValue);
-        binder.forField(ID).asRequired().bind(CLTV_HW_Measures::getId,
+        binder.forField(id).asRequired().bind(CLTV_HW_Measures::getId,
                 CLTV_HW_Measures::setId);
 
         return new BinderCrudEditor<>(binder, editForm);
@@ -654,6 +640,7 @@ public class MappingExampleView extends VerticalLayout {
          String VALUE = "value";
          String EDIT_COLUMN = "vaadin-crud-edit-column";
          grid = crud.getGrid();
+
          grid.getColumnByKey("id").setHeader("ID").setWidth("10px");
 
         // Reorder the columns (alphabetical by default)
@@ -663,24 +650,27 @@ public class MappingExampleView extends VerticalLayout {
 
     }
 
-    private void setupDataProvider() {
-        CLTV_HW_MeasuresDataProvider dataProvider = new CLTV_HW_MeasuresDataProvider(cltvHwMeasureService);
-       // var anzahl = dataProvider.;
+    private void setupDataProviderEvent() {
+        CLTV_HW_MeasuresDataProvider dataProvider = new CLTV_HW_MeasuresDataProvider(getDataProviderAllItems());
 
         article=new Article();
         article.setText(LocalDateTime.now().format(formatter) + ": Info: Download from Database");
         textArea.add(article);
 
-
-        crud.setDataProvider(dataProvider);
         crud.addDeleteListener(
-                deleteEvent -> dataProvider.delete(deleteEvent.getItem()));
+                deleteEvent -> {dataProvider.delete(deleteEvent.getItem());
+                    crud.setDataProvider(dataProvider);
+                });
         crud.addSaveListener(
-
                 saveEvent -> {
-                    System.out.println("geänderte ID: " + saveEvent.getItem().getId());
-                    //dataProvider.persist(saveEvent.getItem());
+                    dataProvider.persist(saveEvent.getItem());
+                    crud.setDataProvider(dataProvider);
                 });
     }
 
+    private List<CLTV_HW_Measures> getDataProviderAllItems() {
+        DataProvider<CLTV_HW_Measures, Void> existDataProvider = (DataProvider<CLTV_HW_Measures, Void>) grid.getDataProvider();
+        List<CLTV_HW_Measures> listOfCLTVMeasures = existDataProvider.fetch(new Query<>()).collect(Collectors.toList());
+        return listOfCLTVMeasures;
+    }
 }
