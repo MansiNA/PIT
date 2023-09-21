@@ -44,7 +44,8 @@ public class MainLayout extends AppLayout {
         addToDrawer(new VerticalLayout(
                 new RouterLink("PFG-Cube", PFGCubeView.class),
                 new RouterLink("HW_Cube", CLTV_HW_MeasuresView.class),
-                new RouterLink("Mapping_Example", MappingExampleView.class)
+                new RouterLink("Mapping_Example", MappingExampleView.class),
+                new RouterLink("KPI", Tech_KPIView.class)
              //   new RouterLink("Dashboard", DashboardView.class)
         ));
 
