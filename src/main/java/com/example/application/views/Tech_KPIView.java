@@ -27,13 +27,18 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Date;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Route(value="Tech_KPI", layout = MainLayout.class)
 @PageTitle("Tech KPI | TEF-Control")
@@ -87,43 +92,65 @@ public class Tech_KPIView extends VerticalLayout {
     }
 
     private void saveEntities() {
-
-
-        UI ui = UI.getCurrent();
-        //progressBar.setValue(100/totalRows*endIndex);
+        UI ui=UI.getCurrent();
+        ui.setPollInterval(500);
+        int totalRows = listOfKPI_Fact.size();
         progressBar.setVisible(true);
+        progressBar.setMin(0);
+        progressBar.setMax(totalRows);
+        progressBar.setValue(0);
 
-        saveBlock();
+        new Thread(() -> {
 
-        progressBar.setVisible(false);
+                    // Do some long running task
+                    try {
+                        System.out.println("Upload Data to DB");
+
+                        int batchSize = 1000; // Die Anzahl der Zeilen, die auf einmal verarbeitet werden sollen
+
+
+                        for (int i = 0; i < totalRows; i += batchSize) {
+
+                            int endIndex = Math.min(i + batchSize, totalRows);
+
+                            List<KPI_Fact> batchData = listOfKPI_Fact.subList(i, endIndex);
+
+                            System.out.println("Verarbeitete Zeilen: " + endIndex + " von " + totalRows);
+                            saveBlock(batchData);
+
+
+                            int finalI = i;
+                            ui.access(() -> {
+                                progressBar.setValue((double) finalI);
+                                System.out.println("Fortschritt aktualisiert auf: " + finalI);
+                            });
+
+                        }
+
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+            ui.access(() -> {
+                ui.setPollInterval(-1);
+                progressBar.setVisible(false);
+            });
+
+        }).start();
+
     }
 
-    private void saveBlock() {
+    private void saveBlock(List<KPI_Fact> batchData) {
 
         String sql = "INSERT INTO [PIT].[Stage_Tech_KPI].[KPI_Fact] (NT_ID, Scenario,[Date],Wert) VALUES (?, ?, ?, ?)";
 
-        int batchSize = 1000; // Die Anzahl der Zeilen, die auf einmal verarbeitet werden sollen
-        int totalRows = listOfKPI_Fact.size();
-
-        for (int i = 0; i < totalRows; i += batchSize){
-
-            int endIndex = Math.min(i + batchSize, totalRows);
-
-            List<KPI_Fact> batchData = listOfKPI_Fact.subList(i, endIndex);
-
-            jdbcTemplate.batchUpdate(sql, batchData, batchData.size(), (ps, entity) -> {
+        jdbcTemplate.batchUpdate(sql, batchData, batchData.size(), (ps, entity) -> {
                 ps.setString(1, entity.getNT_ID());
                 ps.setString(2, entity.getScenario());
                 //  ps.setDate(3, new java.sql.Date(2023,01,01));
                 ps.setDate(3, new java.sql.Date(entity.getDate().getTime() ));
                 ps.setDouble (4, entity.getWert());
             });
-            System.out.println("Verarbeitete Zeilen: " + endIndex + " von " + totalRows);
-
-
-
-
-        }
 
     }
 
