@@ -7,6 +7,8 @@ import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Article;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.progressbar.ProgressBar;
@@ -44,10 +46,12 @@ import java.util.concurrent.CompletableFuture;
 @PageTitle("Tech KPI | TEF-Control")
 public class Tech_KPIView extends VerticalLayout {
 
-    private final JdbcTemplate jdbcTemplate;
+    private JdbcTemplate jdbcTemplate;
     Article article = new Article();
+
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
     Div textArea = new Div();
+    Div message = new Div();
 
     Button importButton = new Button("Import");
     MemoryBuffer memoryBuffer = new MemoryBuffer();
@@ -65,7 +69,7 @@ public class Tech_KPIView extends VerticalLayout {
     public Tech_KPIView(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
 
-
+        importButton.setEnabled(false);
         importButton.addClickListener(e->{
             System.out.println("Import Button gedrückt");
             progressBar.setVisible(true);
@@ -75,15 +79,18 @@ public class Tech_KPIView extends VerticalLayout {
 
         setupGrid();
 
-
-
-
         setupUploader();
+
+        message.setText("1. Datei hochladen.");
 
         Details details = new Details("details", textArea);
         details.setOpened(false);
 
-        add(importButton, singleFileUpload, progressBar,details, grid );
+        HorizontalLayout hl = new HorizontalLayout();
+        hl.setAlignItems(Alignment.CENTER);
+        hl.add(singleFileUpload,importButton,message);
+
+        add(hl, progressBar, details, grid );
 
     //    progressBar.setVisible(false);
 
@@ -99,6 +106,9 @@ public class Tech_KPIView extends VerticalLayout {
         progressBar.setMin(0);
         progressBar.setMax(totalRows);
         progressBar.setValue(0);
+
+
+        message.setText(LocalDateTime.now().format(formatter) + ": Info: saving to database...");
 
         new Thread(() -> {
 
@@ -116,6 +126,7 @@ public class Tech_KPIView extends VerticalLayout {
                             List<KPI_Fact> batchData = listOfKPI_Fact.subList(i, endIndex);
 
                             System.out.println("Verarbeitete Zeilen: " + endIndex + " von " + totalRows);
+
                             saveBlock(batchData);
 
 
@@ -123,6 +134,7 @@ public class Tech_KPIView extends VerticalLayout {
                             ui.access(() -> {
                                 progressBar.setValue((double) finalI);
                                 System.out.println("Fortschritt aktualisiert auf: " + finalI);
+                                message.setText(LocalDateTime.now().format(formatter) + ": Info: saving to database (" + endIndex + "/" + totalRows +")");
                             });
 
                         }
@@ -134,6 +146,11 @@ public class Tech_KPIView extends VerticalLayout {
             ui.access(() -> {
                 ui.setPollInterval(-1);
                 progressBar.setVisible(false);
+                message.setText(LocalDateTime.now().format(formatter) + ": Info: saved " + totalRows + " rows");
+                importButton.setEnabled(false);
+                Notification notification = Notification.show(totalRows + " Rows uploaded");
+                notification.setPosition(Notification.Position.MIDDLE);
+                notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
             });
 
         }).start();
@@ -181,18 +198,22 @@ public class Tech_KPIView extends VerticalLayout {
             mimeType = event.getMIMEType();
             importButton.setEnabled(true);
 
-            textArea.setText("Warten auf Button \"Hochladen\"");
+
 
             listOfKPI_Fact = parseExcelFile(fileData, fileName);
 
             grid.setItems(listOfKPI_Fact);
 
-
+            singleFileUpload.clearFileList();
+            importButton.setEnabled(true);
+            message.setText("2. Button >Import< for upload to Database");
         });
         System.out.println("setup uploader................over");
     }
 
     public List<KPI_Fact> parseExcelFile(InputStream fileData, String fileName) {
+
+
         List<KPI_Fact> listOfKPI_Fact = new ArrayList<>();
         try {
             if(fileName.isEmpty() || fileName.length()==0)
@@ -212,6 +233,7 @@ public class Tech_KPIView extends VerticalLayout {
             System.out.println("Excel import: "+  fileName + " => Mime-Type: " + mimeType  + " Größe " + contentLength + " Byte");
             textArea.setText(LocalDateTime.now().format(formatter) + ": Info: Verarbeite Datei: " + fileName + " (" + contentLength + " Byte)");
 
+            message.setText(LocalDateTime.now().format(formatter) + ": Info: reading file: " + fileName);
 
             //addRowsBT.setEnabled(false);
             //replaceRowsBT.setEnabled(false);
@@ -322,6 +344,7 @@ public class Tech_KPIView extends VerticalLayout {
             textArea.add(article);
 
             System.out.println("Anzahl Zeilen im Excel: " + listOfKPI_Fact.size());
+
 
             return listOfKPI_Fact;
         } catch (Exception e) {
