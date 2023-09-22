@@ -68,7 +68,7 @@ public class Tech_KPIView extends VerticalLayout {
     String mimeType = "";
     Grid<KPI_Fact> gridFact;
     Grid<KPI_Actuals> gridActuals;
-    Grid<KPI_Fact> gridPlan;
+    Grid<KPI_Plan> gridPlan;
 
     H3 h3_Fact= new H3();
     H3 h3_Actuals= new H3();
@@ -78,6 +78,8 @@ public class Tech_KPIView extends VerticalLayout {
 
     private List<KPI_Fact> listOfKPI_Fact = new ArrayList<KPI_Fact>();
     private List<KPI_Actuals> listOfKPI_Actuals = new ArrayList<KPI_Actuals>();
+
+    private List<KPI_Plan> listOfKPI_Plan = new ArrayList<KPI_Plan>();
 
     public Tech_KPIView(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -92,6 +94,7 @@ public class Tech_KPIView extends VerticalLayout {
 
         setupKPIActualsGrid();
         setupKPIFactGrid();
+        setupKPIPlanGrid();
 
         setupUploader();
 
@@ -108,9 +111,7 @@ public class Tech_KPIView extends VerticalLayout {
         h3_Actuals.add("Actuals 0 rows");
         h3_Plan.add("Plan 0 rows");
 
-        add(hl, progressBar, details, h3_Fact, gridFact, h3_Actuals, gridActuals, h3_Plan ); //, gridPlan );
-
-    //    progressBar.setVisible(false);
+        add(hl, progressBar, details, h3_Fact, gridFact, h3_Actuals, gridActuals, h3_Plan, gridPlan );
 
 
 
@@ -232,6 +233,22 @@ public class Tech_KPIView extends VerticalLayout {
 
     }
 
+    private void setupKPIPlanGrid() {
+        gridPlan = new Grid<>(KPI_Plan.class, false);
+
+        gridPlan.setHeight("300px");
+
+        gridPlan.addColumn(KPI_Plan::getRow).setHeader("Zeile");
+
+        gridPlan.addColumn(KPI_Plan::getNT_ID).setHeader("NT ID");
+        gridPlan.addColumn(KPI_Plan::getSpalte1).setHeader("Spalte1");
+        gridPlan.addColumn(KPI_Plan::getScenario).setHeader("Scenario");
+        gridPlan.addColumn(KPI_Plan::getVersionDate).setHeader("VersionDate");
+        gridPlan.addColumn(KPI_Plan::getVersionComment).setHeader("VersionComment");
+        gridPlan.addColumn(KPI_Plan::getRunrate).setHeader("Runrate");
+
+
+    }
     private void setupUploader() {
         System.out.println("setup uploader................start");
         singleFileUpload.setWidth("600px");
@@ -239,6 +256,7 @@ public class Tech_KPIView extends VerticalLayout {
             // Get information about the uploaded file
             fileData_Fact = memoryBuffer.getInputStream();
             fileData_Actuals = memoryBuffer.getInputStream();
+            fileData_Plan = memoryBuffer.getInputStream();
             fileName = event.getFileName();
             contentLength = event.getContentLength();
             mimeType = event.getMIMEType();
@@ -248,10 +266,13 @@ public class Tech_KPIView extends VerticalLayout {
 
             listOfKPI_Fact = parseExcelFile_Fact(fileData_Fact, fileName);
             listOfKPI_Actuals = parseExcelFile_Actuals(fileData_Actuals, fileName);
+            listOfKPI_Plan = parseExcelFile_Plan(fileData_Plan, fileName);
 
             gridFact.setItems(listOfKPI_Fact);
 
             gridActuals.setItems(listOfKPI_Actuals);
+
+            gridPlan.setItems(listOfKPI_Plan);
 
             singleFileUpload.clearFileList();
             importButton.setEnabled(true);
@@ -261,6 +282,9 @@ public class Tech_KPIView extends VerticalLayout {
 
             h3_Actuals.removeAll();
             h3_Actuals.add("Actuals (" + listOfKPI_Actuals.size() + " rows)");
+
+            h3_Plan.removeAll();
+            h3_Plan.add("Plan (" + listOfKPI_Plan.size() + " rows)");
 
         });
         System.out.println("setup uploader................over");
@@ -729,6 +753,172 @@ public class Tech_KPIView extends VerticalLayout {
 
     }
 
+    public List<KPI_Plan> parseExcelFile_Plan(InputStream fileData, String fileName) {
+
+
+        List<KPI_Plan> listOfKPI_Plan = new ArrayList<>();
+        try {
+            if(fileName.isEmpty() || fileName.length()==0)
+            {
+                article=new Article();
+                article.setText(LocalDateTime.now().format(formatter) + ": Error: Keine Datei angegeben!");
+                textArea.add(article);
+            }
+
+            if(!mimeType.contains("openxmlformats-officedocument"))
+            {
+                article=new Article();
+                article.setText(LocalDateTime.now().format(formatter) + ": Error: ungültiges Dateiformat!");
+                textArea.add(article);
+            }
+
+
+            XSSFWorkbook my_xls_workbook = new XSSFWorkbook(fileData);
+            XSSFSheet my_worksheet = my_xls_workbook.getSheet("KPI_Plan");
+            Iterator<Row> rowIterator = my_worksheet.iterator();
+
+            Integer RowNumber=0;
+            Boolean isError=false;
+
+
+
+            while(rowIterator.hasNext() && !isError)
+            {
+                KPI_Plan kPI_Plan = new KPI_Plan();
+                Row row = rowIterator.next();
+                RowNumber++;
+
+                // if (RowNumber>20){ break; }
+
+                kPI_Plan.setRow(RowNumber);
+
+                Iterator<Cell> cellIterator = row.cellIterator();
+                while(cellIterator.hasNext()) {
+
+                    if(RowNumber==1 ) //Überschrift nicht betrachten
+                    {
+                        break;
+                    }
+
+
+                    Cell cell = cellIterator.next();
+
+                    if(cell.getColumnIndex()==0)
+                    {
+                        try {
+                            kPI_Plan.setNT_ID(checkCellString(cell, RowNumber,"NT ID"));
+                        }
+                        catch(Exception e)
+                        {
+                            article=new Article();
+                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte NT ID nicht vorhanden!");
+                            textArea.add(article);
+                            isError=true;
+                            break;
+                        }
+                    }
+
+
+
+                    if(cell.getColumnIndex()==1) {
+                        String ColumnName="Spalte1";
+                        try {
+                            kPI_Plan.setSpalte1(checkCellString(cell, RowNumber, ColumnName));
+                        } catch (Exception e) {
+                            article = new Article();
+                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + " nicht vorhanden!");
+                            textArea.add(article);
+                            isError = true;
+                            break;
+                        }
+                    }
+
+                    if(cell.getColumnIndex()==2) {
+                        String ColumnName="Scenario";
+                        try {
+                            kPI_Plan.setScenario(checkCellString(cell, RowNumber, ColumnName));
+                        } catch (Exception e) {
+                            article = new Article();
+                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + " nicht vorhanden!");
+                            textArea.add(article);
+                            isError = true;
+                            break;
+                        }
+                    }
+
+                    if(cell.getColumnIndex()==3) {
+                        String ColumnName="VersionDate";
+                        try {
+                            kPI_Plan.setVersionDate(checkCellDate(cell, RowNumber, ColumnName));
+                        } catch (Exception e) {
+                            article = new Article();
+                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + " nicht vorhanden!");
+                            textArea.add(article);
+                            isError = true;
+                            break;
+                        }
+                    }
+
+
+                    if(cell.getColumnIndex()==4) {
+                        String ColumnName="VersionComment";
+                        try {
+                            kPI_Plan.setVersionComment(checkCellString(cell, RowNumber, ColumnName));
+                        } catch (Exception e) {
+                            article = new Article();
+                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + " nicht vorhanden!");
+                            textArea.add(article);
+                            isError = true;
+                            break;
+                        }
+                    }
+
+
+                    if(cell.getColumnIndex()==5) {
+                        String ColumnName="Runrate";
+                        try {
+                            kPI_Plan.setRunrate(checkCellString(cell, RowNumber, ColumnName));
+                        } catch (Exception e) {
+                            article = new Article();
+                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + " nicht vorhanden!");
+                            textArea.add(article);
+                            isError = true;
+                            break;
+                        }
+                    }
+
+
+
+                }
+
+                listOfKPI_Plan.add(kPI_Plan);
+                System.out.println(listOfKPI_Plan.size()+".............parse");
+            }
+
+            if(isError)
+            {
+                //    button.setEnabled(true);
+                // spinner.setVisible(false);
+                fileName="";
+            }
+
+            article=new Article();
+            article.getStyle().set("white-space","pre-line");
+            article.add(LocalDateTime.now().format(formatter) + ": Info: Anzahl Zeilen: " + listOfKPI_Actuals.size());
+            article.add("\n");
+
+
+            System.out.println("Anzahl Zeilen im Excel: " + listOfKPI_Actuals.size());
+
+
+            return listOfKPI_Plan;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+
+    }
+
     private Double checkCellDouble(Cell cell, Integer zeile, String spalte) {
 
         if (cell.getCellType()!=Cell.CELL_TYPE_NUMERIC)
@@ -1099,6 +1289,77 @@ public class Tech_KPIView extends VerticalLayout {
         }
     }
 
+    public class KPI_Plan {
 
+        private Integer row;
+
+        private String NT_ID ;
+
+        private String Spalte1 ;
+
+        private String Scenario;
+
+        private Date VersionDate;
+
+        private String VersionComment;
+
+        private String Runrate;
+
+        public Integer getRow() {
+            return row;
+        }
+
+        public void setRow(Integer row) {
+            this.row = row;
+        }
+
+        public String getNT_ID() {
+            return NT_ID;
+        }
+
+        public void setNT_ID(String NT_ID) {
+            this.NT_ID = NT_ID;
+        }
+
+        public String getSpalte1() {
+            return Spalte1;
+        }
+
+        public void setSpalte1(String spalte1) {
+            Spalte1 = spalte1;
+        }
+
+        public String getScenario() {
+            return Scenario;
+        }
+
+        public void setScenario(String scenario) {
+            Scenario = scenario;
+        }
+
+        public Date getVersionDate() {
+            return VersionDate;
+        }
+
+        public void setVersionDate(Date versionDate) {
+            VersionDate = versionDate;
+        }
+
+        public String getVersionComment() {
+            return VersionComment;
+        }
+
+        public void setVersionComment(String versionComment) {
+            VersionComment = versionComment;
+        }
+
+        public String getRunrate() {
+            return Runrate;
+        }
+
+        public void setRunrate(String runrate) {
+            Runrate = runrate;
+        }
+    }
 
 }
