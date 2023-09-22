@@ -7,6 +7,7 @@ import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Article;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -61,11 +62,19 @@ public class Tech_KPIView extends VerticalLayout {
     String fileName = "";
     long contentLength = 0;
     String mimeType = "";
-    Grid<KPI_Fact> grid;
+    Grid<KPI_Fact> gridFact;
+    Grid<KPI_Actuals> gridActuals;
+    Grid<KPI_Fact> gridPlan;
+
+    H3 h3_Fact= new H3();
+    H3 h3_Actuals= new H3();
+    H3 h3_Plan= new H3();
 
     ProgressBar progressBar = new ProgressBar();
 
     private List<KPI_Fact> listOfKPI_Fact = new ArrayList<KPI_Fact>();
+    private List<KPI_Actuals> listOfKPI_Actuals = new ArrayList<KPI_Actuals>();
+
     public Tech_KPIView(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
 
@@ -77,7 +86,8 @@ public class Tech_KPIView extends VerticalLayout {
             saveEntities();
         });
 
-        setupGrid();
+        setupKPIActualsGrid();
+        setupKPIFactGrid();
 
         setupUploader();
 
@@ -90,7 +100,11 @@ public class Tech_KPIView extends VerticalLayout {
         hl.setAlignItems(Alignment.CENTER);
         hl.add(singleFileUpload,importButton,message);
 
-        add(hl, progressBar, details, grid );
+        h3_Fact.add("Fact 0 rows");
+        h3_Actuals.add("Actuals 0 rows");
+        h3_Plan.add("Plan 0 rows");
+
+        add(hl, progressBar, details, h3_Fact, gridFact, h3_Actuals, gridActuals, h3_Plan ); //, gridPlan );
 
     //    progressBar.setVisible(false);
 
@@ -171,18 +185,31 @@ public class Tech_KPIView extends VerticalLayout {
 
     }
 
+    private void setupKPIActualsGrid() {
+        gridActuals = new Grid<>(KPI_Actuals.class, false);
 
-    private void setupGrid() {
-        grid = new Grid<>(KPI_Fact.class, false);
+        gridActuals.setHeight("300px");
 
-        grid.setHeight("600px");
+        gridActuals.addColumn(KPI_Actuals::getRow).setHeader("Zeile");
 
-        grid.addColumn(KPI_Fact::getRow).setHeader("Zeile");
+        gridActuals.addColumn(KPI_Actuals::getNT_ID).setHeader("NT ID");
+        gridActuals.addColumn(KPI_Actuals::getSort).setHeader("Sort");
+        gridActuals.addColumn(KPI_Actuals::getM2_Area).setHeader("M2_Area");
+        gridActuals.addColumn(KPI_Actuals::getM1_Network).setHeader("M1_Network");
 
-        grid.addColumn(KPI_Fact::getNT_ID).setHeader("NT ID");
-        grid.addColumn(KPI_Fact::getScenario).setHeader("Scenario");
-        grid.addColumn(KPI_Fact::getDate).setHeader("Date");
-        grid.addColumn(KPI_Fact::getWert).setHeader("Wert");
+
+    }
+    private void setupKPIFactGrid() {
+        gridFact = new Grid<>(KPI_Fact.class, false);
+
+        gridFact.setHeight("300px");
+
+        gridFact.addColumn(KPI_Fact::getRow).setHeader("Zeile");
+
+        gridFact.addColumn(KPI_Fact::getNT_ID).setHeader("NT ID");
+        gridFact.addColumn(KPI_Fact::getScenario).setHeader("Scenario");
+        gridFact.addColumn(KPI_Fact::getDate).setHeader("Date");
+        gridFact.addColumn(KPI_Fact::getWert).setHeader("Wert");
 
 
     }
@@ -200,18 +227,26 @@ public class Tech_KPIView extends VerticalLayout {
 
 
 
-            listOfKPI_Fact = parseExcelFile(fileData, fileName);
+            //listOfKPI_Fact = parseExcelFile_Fact(fileData, fileName);
+            listOfKPI_Actuals = parseExcelFile_Actuals(fileData, fileName);
 
-            grid.setItems(listOfKPI_Fact);
+            gridFact.setItems(listOfKPI_Fact);
+
+            gridActuals.setItems(listOfKPI_Actuals);
 
             singleFileUpload.clearFileList();
             importButton.setEnabled(true);
             message.setText("2. Button >Import< for upload to Database");
+            h3_Fact.removeAll();
+            h3_Fact.add("Fact (" + listOfKPI_Fact.size() + " rows)");
+
+            h3_Actuals.removeAll();
+            h3_Actuals.add("Actuals (" + listOfKPI_Actuals.size() + " rows)");
+
         });
         System.out.println("setup uploader................over");
     }
-
-    public List<KPI_Fact> parseExcelFile(InputStream fileData, String fileName) {
+    public List<KPI_Fact> parseExcelFile_Fact(InputStream fileData, String fileName) {
 
 
         List<KPI_Fact> listOfKPI_Fact = new ArrayList<>();
@@ -223,7 +258,7 @@ public class Tech_KPIView extends VerticalLayout {
                 textArea.add(article);
             }
 
-            if(!mimeType.contains("application/vnd.ms-excel"))
+            if(!mimeType.contains("openxmlformats-officedocument"))
             {
                 article=new Article();
                 article.setText(LocalDateTime.now().format(formatter) + ": Error: ungültiges Dateiformat!");
@@ -239,9 +274,9 @@ public class Tech_KPIView extends VerticalLayout {
             //replaceRowsBT.setEnabled(false);
             //spinner.setVisible(true);
 
-          //  HSSFWorkbook my_xls_workbook = new HSSFWorkbook(fileData);
+            //  HSSFWorkbook my_xls_workbook = new HSSFWorkbook(fileData);
             XSSFWorkbook my_xls_workbook = new XSSFWorkbook(fileData);
-         //   HSSFSheet my_worksheet = my_xls_workbook.getSheetAt(0);
+            //   HSSFSheet my_worksheet = my_xls_workbook.getSheetAt(0);
             XSSFSheet my_worksheet = my_xls_workbook.getSheet("KPI_Fact");
             Iterator<Row> rowIterator = my_worksheet.iterator();
 
@@ -332,7 +367,7 @@ public class Tech_KPIView extends VerticalLayout {
             if(isError)
             {
                 //    button.setEnabled(true);
-               // spinner.setVisible(false);
+                // spinner.setVisible(false);
                 fileName="";
             }
 
@@ -340,13 +375,145 @@ public class Tech_KPIView extends VerticalLayout {
             article.getStyle().set("white-space","pre-line");
             article.add(LocalDateTime.now().format(formatter) + ": Info: Anzahl Zeilen: " + listOfKPI_Fact.size());
             article.add("\n");
-            article.add(LocalDateTime.now().format(formatter) + ": Info: Start Upload to DB");
-            textArea.add(article);
 
             System.out.println("Anzahl Zeilen im Excel: " + listOfKPI_Fact.size());
 
 
             return listOfKPI_Fact;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+
+    }
+    public List<KPI_Actuals> parseExcelFile_Actuals(InputStream fileData, String fileName) {
+
+
+        List<KPI_Actuals> listOfKPI_Actuals = new ArrayList<>();
+        try {
+            if(fileName.isEmpty() || fileName.length()==0)
+            {
+                article=new Article();
+                article.setText(LocalDateTime.now().format(formatter) + ": Error: Keine Datei angegeben!");
+                textArea.add(article);
+            }
+
+            if(!mimeType.contains("openxmlformats-officedocument"))
+            {
+                article=new Article();
+                article.setText(LocalDateTime.now().format(formatter) + ": Error: ungültiges Dateiformat!");
+                textArea.add(article);
+            }
+
+
+            XSSFWorkbook my_xls_workbook = new XSSFWorkbook(fileData);
+            XSSFSheet my_worksheet = my_xls_workbook.getSheet("KPI_Actuals");
+            Iterator<Row> rowIterator = my_worksheet.iterator();
+
+            Integer RowNumber=0;
+            Boolean isError=false;
+
+            while(rowIterator.hasNext() && !isError)
+            {
+                KPI_Actuals kPI_Actuals = new KPI_Actuals();
+                Row row = rowIterator.next();
+                RowNumber++;
+
+               // if (RowNumber>20){ break; }
+
+                kPI_Actuals.setRow(RowNumber);
+
+                Iterator<Cell> cellIterator = row.cellIterator();
+                while(cellIterator.hasNext()) {
+
+                    if(RowNumber==1 ) //Überschrift nicht betrachten
+                    {
+                        break;
+                    }
+
+
+                    Cell cell = cellIterator.next();
+
+                    if(cell.getColumnIndex()==1)
+                    {
+                         try {
+                            kPI_Actuals.setNT_ID(checkCellString(cell, RowNumber,"NT ID"));
+                             }
+                        catch(Exception e)
+                            {
+                                article=new Article();
+                                article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte NT ID nicht vorhanden!");
+                                textArea.add(article);
+                                isError=true;
+                                break;
+                            }
+                    }
+/*
+                   try {
+                        cell = cellIterator.next();
+                        kPI_Actuals.setWTAC_ID(checkCellString(cell, RowNumber,"WTAC ID"));
+                    }
+                    catch(Exception e)
+                    {
+                        article=new Article();
+                        article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte WTAC ID nicht vorhanden!");
+                        textArea.add(article);
+                        isError=true;
+                        break;
+                    }
+
+                    try {
+                        cell = cellIterator.next();
+                        kPI_Actuals.setSort(checkCellString(cell, RowNumber,"sort"));
+                    }
+                    catch(Exception e)
+                    {
+                        article=new Article();
+                        article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte sort nicht vorhanden! " + e.getMessage());
+                        textArea.add(article);
+                        isError=true;
+                        break;
+                    }
+
+                    try {
+                        cell = cellIterator.next();
+                        kPI_Actuals.setM2_Area(checkCellString(cell, RowNumber,"M2_Area"));
+                    }
+                    catch(Exception e)
+                    {
+                        article=new Article();
+                        article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte M2_Area nicht vorhanden!");
+                        textArea.add(article);
+                        isError=true;
+                        break;
+                        //kPI_Fact.setWert(0.0);
+                    }
+*/
+
+
+                }
+
+                listOfKPI_Actuals.add(kPI_Actuals);
+                System.out.println(listOfKPI_Actuals.size()+".............parse");
+            }
+
+            if(isError)
+            {
+                //    button.setEnabled(true);
+               // spinner.setVisible(false);
+                fileName="";
+            }
+
+            article=new Article();
+            article.getStyle().set("white-space","pre-line");
+            article.add(LocalDateTime.now().format(formatter) + ": Info: Anzahl Zeilen: " + listOfKPI_Actuals.size());
+            article.add("\n");
+
+
+            System.out.println("Anzahl Zeilen im Excel: " + listOfKPI_Actuals.size());
+
+
+            return listOfKPI_Actuals;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -400,7 +567,7 @@ public class Tech_KPIView extends VerticalLayout {
             }
         }
         catch(Exception e) {
-            System.out.println("Exception" + e.getMessage());
+            System.out.println("Exception: " + e.getMessage());
             //detailsText.setValue(detailsText.getValue() + "\nZeile " + zeile.toString() + ", Spalte " + spalte + "  konnte nicht gelesen werden, da ExcelTyp Numeric!");
             article.add("\nZeile " + zeile.toString() + ", Spalte " + spalte + "  konnte nicht gelesen werden, da ExcelTyp Numeric!");
             textArea.add(article);
@@ -538,6 +705,190 @@ public class Tech_KPIView extends VerticalLayout {
         }
     }
 
+    public class KPI_Actuals {
+
+        private Integer row;
+        private String NT_ID ;
+
+        private String WTAC_ID ;
+
+        private String sort;
+        private String M2_Area ;
+
+        private String M1_Network ;
+
+        private String M3_Service;
+
+        private String M4_Dimension;
+
+        private String M5_Tech;
+
+        private String M6_Detail;
+
+        private String KPI_long;
+
+        private String Runrate;
+
+        private String Unit;
+        private String Description;
+        private String SourceReport;
+        private String SourceInput;
+        private String SourceComment;
+        private String SourceContact;
+        private String SourceLink;
+
+        public Integer getRow() {
+            return row;
+        }
+
+        public void setRow(Integer row) {
+            this.row = row;
+        }
+
+        public String getNT_ID() {
+            return NT_ID;
+        }
+
+        public void setNT_ID(String NT_ID) {
+            this.NT_ID = NT_ID;
+        }
+
+        public String getWTAC_ID() {
+            return WTAC_ID;
+        }
+
+        public void setWTAC_ID(String WTAC_ID) {
+            this.WTAC_ID = WTAC_ID;
+        }
+
+        public String getSort() {
+            return sort;
+        }
+
+        public void setSort(String sort) {
+            this.sort = sort;
+        }
+
+        public String getM2_Area() {
+            return M2_Area;
+        }
+
+        public void setM2_Area(String m2_Area) {
+            M2_Area = m2_Area;
+        }
+
+        public String getM1_Network() {
+            return M1_Network;
+        }
+
+        public void setM1_Network(String m1_Network) {
+            M1_Network = m1_Network;
+        }
+
+        public String getM3_Service() {
+            return M3_Service;
+        }
+
+        public void setM3_Service(String m3_Service) {
+            M3_Service = m3_Service;
+        }
+
+        public String getM4_Dimension() {
+            return M4_Dimension;
+        }
+
+        public void setM4_Dimension(String m4_Dimension) {
+            M4_Dimension = m4_Dimension;
+        }
+
+        public String getM5_Tech() {
+            return M5_Tech;
+        }
+
+        public void setM5_Tech(String m5_Tech) {
+            M5_Tech = m5_Tech;
+        }
+
+        public String getM6_Detail() {
+            return M6_Detail;
+        }
+
+        public void setM6_Detail(String m6_Detail) {
+            M6_Detail = m6_Detail;
+        }
+
+        public String getKPI_long() {
+            return KPI_long;
+        }
+
+        public void setKPI_long(String KPI_long) {
+            this.KPI_long = KPI_long;
+        }
+
+        public String getRunrate() {
+            return Runrate;
+        }
+
+        public void setRunrate(String runrate) {
+            Runrate = runrate;
+        }
+
+        public String getUnit() {
+            return Unit;
+        }
+
+        public void setUnit(String unit) {
+            Unit = unit;
+        }
+
+        public String getDescription() {
+            return Description;
+        }
+
+        public void setDescription(String description) {
+            Description = description;
+        }
+
+        public String getSourceReport() {
+            return SourceReport;
+        }
+
+        public void setSourceReport(String sourceReport) {
+            SourceReport = sourceReport;
+        }
+
+        public String getSourceInput() {
+            return SourceInput;
+        }
+
+        public void setSourceInput(String sourceInput) {
+            SourceInput = sourceInput;
+        }
+
+        public String getSourceComment() {
+            return SourceComment;
+        }
+
+        public void setSourceComment(String sourceComment) {
+            SourceComment = sourceComment;
+        }
+
+        public String getSourceContact() {
+            return SourceContact;
+        }
+
+        public void setSourceContact(String sourceContact) {
+            SourceContact = sourceContact;
+        }
+
+        public String getSourceLink() {
+            return SourceLink;
+        }
+
+        public void setSourceLink(String sourceLink) {
+            SourceLink = sourceLink;
+        }
+    }
 
 
 
