@@ -54,7 +54,7 @@ public class Tech_KPIView extends VerticalLayout {
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
     Div textArea = new Div();
     Div message = new Div();
-
+    UI ui=UI.getCurrent();
     Button importButton = new Button("Import");
     MemoryBuffer memoryBuffer = new MemoryBuffer();
     Upload singleFileUpload = new Upload(memoryBuffer);
@@ -74,7 +74,9 @@ public class Tech_KPIView extends VerticalLayout {
     H3 h3_Actuals= new H3();
     H3 h3_Plan= new H3();
 
-    ProgressBar progressBar = new ProgressBar();
+    ProgressBar progressBarFact = new ProgressBar();
+    ProgressBar progressBarPlan = new ProgressBar();
+    ProgressBar progressBarActuals = new ProgressBar();
 
     private List<KPI_Fact> listOfKPI_Fact = new ArrayList<KPI_Fact>();
     private List<KPI_Actuals> listOfKPI_Actuals = new ArrayList<KPI_Actuals>();
@@ -85,11 +87,17 @@ public class Tech_KPIView extends VerticalLayout {
         this.jdbcTemplate = jdbcTemplate;
 
         importButton.setEnabled(false);
+        progressBarPlan.setVisible(false);
+        progressBarActuals.setVisible(false);
+        progressBarFact.setVisible(false);
+
         importButton.addClickListener(e->{
             System.out.println("Import Button gedrückt");
-            progressBar.setVisible(true);
-            progressBar.setValue(0);
-            saveEntities();
+            ui.setPollInterval(500);
+            saveFactEntities();
+            savePlanEntities();
+            saveActualsEntities();
+            ui.setPollInterval(-1);
         });
 
         setupKPIActualsGrid();
@@ -111,24 +119,144 @@ public class Tech_KPIView extends VerticalLayout {
         h3_Actuals.add("Actuals 0 rows");
         h3_Plan.add("Plan 0 rows");
 
-        add(hl, progressBar, details, h3_Fact, gridFact, h3_Actuals, gridActuals, h3_Plan, gridPlan );
+        add(hl, progressBarFact, progressBarPlan,progressBarActuals, details, h3_Fact, gridFact, h3_Actuals, gridActuals, h3_Plan, gridPlan );
 
 
 
     }
+    private void savePlanEntities() {
 
-    private void saveEntities() {
-        UI ui=UI.getCurrent();
-        ui.setPollInterval(500);
+        int totalRows = listOfKPI_Plan.size();
+        progressBarPlan.setVisible(true);
+        progressBarPlan.setMin(0);
+        progressBarPlan.setMax(totalRows);
+        progressBarPlan.setValue(0);
+        importButton.setEnabled(false);
+
+
+        message.setText(LocalDateTime.now().format(formatter) + ": Info: saving KPI_Plan to database...");
+        truncateTable("[PIT].[Stage_Tech_KPI].[KPI_Plan]");
+        new Thread(() -> {
+
+            // Do some long running task
+            try {
+                System.out.println("Upload KPI_Plan Data to DB");
+
+                int batchSize = 1000; // Die Anzahl der Zeilen, die auf einmal verarbeitet werden sollen
+
+
+                for (int i = 1; i < totalRows; i += batchSize) {
+
+                    int endIndex = Math.min(i + batchSize, totalRows);
+
+                    List<KPI_Plan> batchData = listOfKPI_Plan.subList(i, endIndex);
+
+                    System.out.println("Verarbeitete Zeilen: " + endIndex + " von " + totalRows);
+
+                    savePlanBlock(batchData);
+
+
+                    int finalI = i;
+                    ui.access(() -> {
+                        progressBarPlan.setValue((double) finalI);
+                        System.out.println("Fortschritt aktualisiert auf: " + finalI);
+                        message.setText(LocalDateTime.now().format(formatter) + ": Info: saving to database (" + endIndex + "/" + totalRows +")");
+                    });
+
+                }
+
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            ui.access(() -> {
+
+                progressBarPlan.setVisible(false);
+                message.setText(LocalDateTime.now().format(formatter) + ": Info: saved " + totalRows + " rows");
+                importButton.setEnabled(true);
+                Notification notification = Notification.show(totalRows + " Rows uploaded");
+                notification.setPosition(Notification.Position.MIDDLE);
+                notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            });
+
+        }).start();
+
+    }
+    private void saveActualsEntities() {
+
+        String sheet="KPI_Actuals";
+        int totalRows = listOfKPI_Actuals.size();
+        progressBarActuals.setVisible(true);
+        progressBarActuals.setMin(0);
+        progressBarActuals.setMax(totalRows);
+        progressBarActuals.setValue(0);
+        importButton.setEnabled(false);
+
+
+        message.setText(message.getText() + "\n" + LocalDateTime.now().format(formatter) + ": Info: saving " + sheet + " to database...");
+
+        truncateTable("[PIT].[Stage_Tech_KPI].[KPI_Actuals]");
+
+        new Thread(() -> {
+
+            // Do some long running task
+            try {
+                System.out.println("Upload " + sheet + "-Data to DB");
+
+                int batchSize = 1000; // Die Anzahl der Zeilen, die auf einmal verarbeitet werden sollen
+
+
+                for (int i = 1; i < totalRows; i += batchSize) {
+
+                    int endIndex = Math.min(i + batchSize, totalRows);
+
+                    List<KPI_Actuals> batchData = listOfKPI_Actuals.subList(i, endIndex);
+
+                    System.out.println("Verarbeitete Zeilen: " + endIndex + " von " + totalRows);
+
+                    saveActualsBlock(batchData);
+
+
+                    int finalI = i;
+                    ui.access(() -> {
+                        progressBarActuals.setValue((double) finalI);
+                        System.out.println("Fortschritt aktualisiert auf: " + finalI);
+                        message.setText(message.getText() + "\n" + LocalDateTime.now().format(formatter) + ": Info: " + sheet + " saving to database (" + endIndex + "/" + totalRows +")");
+                    });
+
+                }
+
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            ui.access(() -> {
+
+                progressBarActuals.setVisible(false);
+                message.setText(message.getText() + "\n" + LocalDateTime.now().format(formatter) + ": Info: " + sheet+ " saved " + totalRows + " rows");
+                importButton.setEnabled(true);
+                Notification notification = Notification.show(sheet + " " + totalRows + " Rows uploaded");
+                notification.setPosition(Notification.Position.MIDDLE);
+                notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            });
+
+        }).start();
+
+    }
+
+    private void saveFactEntities() {
+
+        importButton.setEnabled(false);
+
         int totalRows = listOfKPI_Fact.size();
-        progressBar.setVisible(true);
-        progressBar.setMin(0);
-        progressBar.setMax(totalRows);
-        progressBar.setValue(0);
+        progressBarFact.setVisible(true);
+        progressBarFact.setMin(0);
+        progressBarFact.setMax(totalRows);
+        progressBarFact.setValue(0);
 
 
-        message.setText(LocalDateTime.now().format(formatter) + ": Info: saving to database...");
-
+        message.setText(LocalDateTime.now().format(formatter) + ": Info: saving KPI_Fact to database...");
+        truncateTable("[PIT].[Stage_Tech_KPI].[KPI_Fact]");
         new Thread(() -> {
 
                     // Do some long running task
@@ -138,7 +266,7 @@ public class Tech_KPIView extends VerticalLayout {
                         int batchSize = 1000; // Die Anzahl der Zeilen, die auf einmal verarbeitet werden sollen
 
 
-                        for (int i = 0; i < totalRows; i += batchSize) {
+                        for (int i = 1; i < totalRows; i += batchSize) {
 
                             int endIndex = Math.min(i + batchSize, totalRows);
 
@@ -146,12 +274,12 @@ public class Tech_KPIView extends VerticalLayout {
 
                             System.out.println("Verarbeitete Zeilen: " + endIndex + " von " + totalRows);
 
-                            saveBlock(batchData);
+                            saveFactBlock(batchData);
 
 
                             int finalI = i;
                             ui.access(() -> {
-                                progressBar.setValue((double) finalI);
+                                progressBarFact.setValue((double) finalI);
                                 System.out.println("Fortschritt aktualisiert auf: " + finalI);
                                 message.setText(LocalDateTime.now().format(formatter) + ": Info: saving to database (" + endIndex + "/" + totalRows +")");
                             });
@@ -163,10 +291,10 @@ public class Tech_KPIView extends VerticalLayout {
                         e.printStackTrace();
                     }
             ui.access(() -> {
-                ui.setPollInterval(-1);
-                progressBar.setVisible(false);
+
+                progressBarFact.setVisible(false);
                 message.setText(LocalDateTime.now().format(formatter) + ": Info: saved " + totalRows + " rows");
-                importButton.setEnabled(false);
+                importButton.setEnabled(true);
                 Notification notification = Notification.show(totalRows + " Rows uploaded");
                 notification.setPosition(Notification.Position.MIDDLE);
                 notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
@@ -176,7 +304,65 @@ public class Tech_KPIView extends VerticalLayout {
 
     }
 
-    private void saveBlock(List<KPI_Fact> batchData) {
+    private void truncateTable(String tableName) {
+
+        String sql="truncate table " + tableName;
+
+        jdbcTemplate.execute(sql);
+
+    }
+
+    private void saveActualsBlock(List<KPI_Actuals> batchData) {
+
+        String sql = "INSERT INTO [PIT].[Stage_Tech_KPI].[KPI_Actuals] ([NT_ID],[WTAC_ID],[sort],[M2_Area],[M1_Network],[M3_Service],[M4_Dimension],[M5_Tech],[M6_Detail],[KPI_long],[Runrate],[Unit],[Description],[SourceReport],[SourceInput],[SourceComment] ,[SourceContact] ,[SourceLink] ) VALUES (?, ?, ?, ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
+        jdbcTemplate.batchUpdate(sql, batchData, batchData.size(), (ps, entity) -> {
+            ps.setString(1, entity.getNT_ID());
+            ps.setString(2, entity.getWTAC_ID());
+            ps.setInt(3, entity.getSort());
+            ps.setString(4, entity.getM2_Area());
+            ps.setString(5, entity.getM1_Network());
+            ps.setString(6, entity.getM3_Service());
+            ps.setString(7, entity.getM4_Dimension());
+            ps.setString(8, entity.getM5_Tech());
+            ps.setString(9, entity.getM6_Detail());
+            ps.setString(10, entity.getKPI_long());
+            ps.setString(11, entity.getRunrate());
+            ps.setString(12, entity.getUnit());
+            ps.setString(13, entity.getDescription());
+            ps.setString(14, entity.getSourceReport());
+            ps.setString(15, entity.getSourceInput());
+            ps.setString(16, entity.getSourceComment());
+            ps.setString(17, entity.getSourceContact());
+            ps.setString(18, entity.getSourceLink());
+        });
+
+    }
+    private void savePlanBlock(List<KPI_Plan> batchData) {
+
+        String sql = "INSERT INTO [PIT].[Stage_Tech_KPI].[KPI_Plan] (NT_ID, Spalte1, Scenario, VersionDate, VersionComment, Runrate) VALUES (?, ?, ?, ?, ?, ?)";
+
+        jdbcTemplate.batchUpdate(sql, batchData, batchData.size(), (ps, entity) -> {
+
+            java.sql.Date versionDate = null;
+            if(entity.getVersionDate() != null)
+            {
+                versionDate=new java.sql.Date(entity.getVersionDate().getTime());
+            }
+
+            ps.setString(1, entity.getNT_ID());
+            ps.setString(2, entity.getSpalte1());
+            ps.setString(3, entity.getScenario());
+            ps.setDate(4, versionDate);
+            ps.setString(5, entity.getVersionComment());
+            ps.setString(6, entity.getRunrate());
+            //  ps.setDate(3, new java.sql.Date(2023,01,01));
+            //ps.setDate(3, new java.sql.Date(entity.getDate().getTime() ));
+            //ps.setDouble (4, entity.getWert());
+        });
+
+    }
+    private void saveFactBlock(List<KPI_Fact> batchData) {
 
         String sql = "INSERT INTO [PIT].[Stage_Tech_KPI].[KPI_Fact] (NT_ID, Scenario,[Date],Wert) VALUES (?, ?, ?, ?)";
 
@@ -252,6 +438,7 @@ public class Tech_KPIView extends VerticalLayout {
     private void setupUploader() {
         System.out.println("setup uploader................start");
         singleFileUpload.setWidth("600px");
+
         singleFileUpload.addSucceededListener(event -> {
             // Get information about the uploaded file
             fileData_Fact = memoryBuffer.getInputStream();
@@ -333,7 +520,7 @@ public class Tech_KPIView extends VerticalLayout {
 
                 //if (RowNumber>200){ break; }
 
-                kPI_Fact.setRow(RowNumber);
+
 
                 Iterator<Cell> cellIterator = row.cellIterator();
                 while(cellIterator.hasNext()) {
@@ -345,6 +532,7 @@ public class Tech_KPIView extends VerticalLayout {
 
 
                     Cell cell = cellIterator.next();
+                    kPI_Fact.setRow(RowNumber);
 
                     if(cell.getColumnIndex()==0)
                     {
@@ -765,18 +953,17 @@ public class Tech_KPIView extends VerticalLayout {
 
             Integer RowNumber=0;
             Integer Error_count=0;
+            Boolean sheedEnd=false;
 
 
 
-            while(rowIterator.hasNext() )
+            while(rowIterator.hasNext() && !sheedEnd)
             {
                 KPI_Plan kPI_Plan = new KPI_Plan();
                 Row row = rowIterator.next();
                 RowNumber++;
 
                 // if (RowNumber>20){ break; }
-
-
 
                 Iterator<Cell> cellIterator = row.cellIterator();
                 while(cellIterator.hasNext()) {
@@ -788,13 +975,24 @@ public class Tech_KPIView extends VerticalLayout {
 
 
                     Cell cell = cellIterator.next();
-                    kPI_Plan.setRow(RowNumber);
+
 
                     if(cell.getColumnIndex()==0)
                     {
                         String ColumnName="NT ID";
                         try {
-                            kPI_Plan.setNT_ID(checkCellString(sheetName, cell, RowNumber,ColumnName));
+
+                            String ntID=checkCellString(sheetName, cell, RowNumber,ColumnName);
+
+                            if(ntID.isEmpty()) //Leere Excel Zellen nicht betrachten
+                            {
+                                sheedEnd=true;
+                                break;
+                            }
+                            kPI_Plan.setNT_ID(ntID);
+                            kPI_Plan.setRow(RowNumber);
+
+
                         }
                         catch(Exception e)
                         {
@@ -906,6 +1104,49 @@ public class Tech_KPIView extends VerticalLayout {
 
     private Double checkCellDouble(String sheetName, Cell cell, Integer zeile, String spalte) {
 
+        try {
+
+            switch (cell.getCellType()){
+                case Cell.CELL_TYPE_NUMERIC:
+                    return  (double) cell.getNumericCellValue();
+                case Cell.CELL_TYPE_STRING:
+                    return 0.0;
+                case Cell.CELL_TYPE_FORMULA:
+                    return 0.0;
+                case Cell.CELL_TYPE_BLANK:
+                    return 0.0;
+                case Cell.CELL_TYPE_BOOLEAN:
+                    return 0.0;
+                case Cell.CELL_TYPE_ERROR:
+                    return 0.0;
+
+            }
+            article.add("\n" + sheetName + " Zeile " + zeile.toString() + ", column >" + spalte + "< konnte in checkCellDouble nicht aufgelöst werden. Typ=" + cell.getCellType());
+            textArea.add(article);
+
+        }
+        catch(Exception e){
+            switch (e.getMessage()) {
+                case "Cannot get a text value from a error formula cell":
+
+                    article = new Article();
+                    article.setText("\n" + sheetName + ": Info: row >" + zeile.toString() + "<, column " + spalte + ": formula cell error => replaced to 0");
+                    textArea.add(article);
+
+                    return  0.0;
+
+            }
+            System.out.println("Zeile " + zeile.toString() + ", Spalte " + spalte + " konnte in checkCellDouble nicht aufgelöst werden. Typ=" + cell.getCellType() + e.getMessage());
+        }
+
+
+        return  0.0;
+
+
+
+        /*
+
+
         if (cell.getCellType()!=Cell.CELL_TYPE_NUMERIC)
         {
             System.out.println("Zeile " + zeile.toString() + ", Spalte " + spalte + " konnte nicht gelesen werden, da ExcelTyp nicht numerisch!");
@@ -919,6 +1160,8 @@ public class Tech_KPIView extends VerticalLayout {
             //System.out.println("Spalte: " + spalte + " Zeile: " + zeile.toString() + " Wert: " + cell.getNumericCellValue());
             return  (double) cell.getNumericCellValue();
         }
+
+         */
 
     }
 
@@ -1040,7 +1283,7 @@ public class Tech_KPIView extends VerticalLayout {
 
         }
 
-   return null;
+   return 0;
 
 
 /*
@@ -1071,13 +1314,6 @@ public class Tech_KPIView extends VerticalLayout {
 
         private Integer row;
 
-        public Integer getRow() {
-            return row;
-        }
-
-        public void setRow(Integer row) {
-            this.row = row;
-        }
 
         private String NT_ID ;
 
@@ -1085,8 +1321,15 @@ public class Tech_KPIView extends VerticalLayout {
 
         private Date Date;
 
-        private Double Wert;
+        private Double Wert=0.0;
 
+        public Integer getRow() {
+            return row;
+        }
+
+        public void setRow(Integer row) {
+            this.row = row;
+        }
 
         public String getNT_ID() {
             return NT_ID;
@@ -1112,8 +1355,9 @@ public class Tech_KPIView extends VerticalLayout {
             Date = date;
         }
 
-        public Double getWert() {
-            return Wert;
+        public Double getWert()
+        {
+          return Wert;
         }
 
         public void setWert(Double wert) {
@@ -1128,30 +1372,30 @@ public class Tech_KPIView extends VerticalLayout {
 
         private String WTAC_ID="" ;
 
-        private Integer sort;
+        private Integer sort=0;
         private String M2_Area="" ;
 
         private String M1_Network="" ;
 
         private String M3_Service="";
 
-        private String M4_Dimension;
+        private String M4_Dimension="";
 
-        private String M5_Tech;
+        private String M5_Tech="";
 
-        private String M6_Detail;
+        private String M6_Detail="";
 
-        private String KPI_long;
+        private String KPI_long="";
 
-        private String Runrate;
+        private String Runrate="";
 
-        private String Unit;
-        private String Description;
+        private String Unit="";
+        private String Description="";
         private String SourceReport;
-        private String SourceInput;
-        private String SourceComment;
-        private String SourceContact;
-        private String SourceLink;
+        private String SourceInput="";
+        private String SourceComment="";
+        private String SourceContact="";
+        private String SourceLink="";
 
         public Integer getRow() {
             return row;
