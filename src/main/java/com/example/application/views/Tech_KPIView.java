@@ -264,9 +264,9 @@ public class Tech_KPIView extends VerticalLayout {
 
 
 
-            listOfKPI_Fact = parseExcelFile_Fact(fileData_Fact, fileName);
-            listOfKPI_Actuals = parseExcelFile_Actuals(fileData_Actuals, fileName);
-            listOfKPI_Plan = parseExcelFile_Plan(fileData_Plan, fileName);
+            listOfKPI_Fact = parseExcelFile_Fact(fileData_Fact, fileName,"KPI_Fact");
+            listOfKPI_Actuals = parseExcelFile_Actuals(fileData_Actuals, fileName,"KPI_Actuals");
+            listOfKPI_Plan = parseExcelFile_Plan(fileData_Plan, fileName, "KPI_Plan");
 
             gridFact.setItems(listOfKPI_Fact);
 
@@ -289,7 +289,7 @@ public class Tech_KPIView extends VerticalLayout {
         });
         System.out.println("setup uploader................over");
     }
-    public List<KPI_Fact> parseExcelFile_Fact(InputStream fileData, String fileName) {
+    public List<KPI_Fact> parseExcelFile_Fact(InputStream fileData, String fileName, String sheetName) {
 
 
         List<KPI_Fact> listOfKPI_Fact = new ArrayList<>();
@@ -323,9 +323,9 @@ public class Tech_KPIView extends VerticalLayout {
             Iterator<Row> rowIterator = my_worksheet.iterator();
 
             Integer RowNumber=0;
-            Boolean isError=false;
+            Integer Error_count=0;
 
-            while(rowIterator.hasNext() && !isError)
+            while(rowIterator.hasNext() )
             {
                 KPI_Fact kPI_Fact = new KPI_Fact();
                 Row row = rowIterator.next();
@@ -346,77 +346,84 @@ public class Tech_KPIView extends VerticalLayout {
 
                     Cell cell = cellIterator.next();
 
-                    try {
-                        kPI_Fact.setNT_ID(checkCellString(cell, RowNumber,"NT ID"));
-                    }
-                    catch(Exception e)
+                    if(cell.getColumnIndex()==0)
                     {
-                        article=new Article();
-                        article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte NT ID nicht vorhanden!");
-                        textArea.add(article);
-                        isError=true;
-                        break;
+                        String ColumnName="NT ID";
+                        try {
+                            kPI_Fact.setNT_ID(checkCellString(sheetName, cell, RowNumber,ColumnName));
+                        }
+                        catch(Exception e)
+                        {
+                            article=new Article();
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
+                            textArea.add(article);
+                            Error_count++;
+
+                        }
                     }
 
-                    try {
-                        cell = cellIterator.next();
-                        kPI_Fact.setScenario(checkCellString(cell, RowNumber,"Scenario"));
-                    }
-                    catch(Exception e)
+                    if(cell.getColumnIndex()==1)
                     {
-                        article=new Article();
-                        article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte Scenario nicht vorhanden!");
-                        textArea.add(article);
-                        isError=true;
-                        break;
+                        String ColumnName="Scenario";
+                        try {
+                            kPI_Fact.setScenario(checkCellString(sheetName, cell, RowNumber,ColumnName));
+                        }
+                        catch(Exception e)
+                        {
+                            article=new Article();
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
+                            textArea.add(article);
+                            Error_count++;
+
+                        }
                     }
 
-                    try {
-                        cell = cellIterator.next();
-                        kPI_Fact.setDate(checkCellDate(cell, RowNumber,"Date"));
-                    }
-                    catch(Exception e)
+                    if(cell.getColumnIndex()==2)
                     {
-                        article=new Article();
-                        article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte Date nicht vorhanden! " + e.getMessage());
-                        textArea.add(article);
-                        isError=true;
-                        break;
+                        String ColumnName="Date";
+                        try {
+                            kPI_Fact.setDate(checkCellDate(sheetName, cell, RowNumber,ColumnName));
+                        }
+                        catch(Exception e)
+                        {
+                            article=new Article();
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
+                            textArea.add(article);
+                            Error_count++;
+
+                        }
                     }
 
-                    try {
-                        cell = cellIterator.next();
-                        kPI_Fact.setWert(checkCellDouble(cell, RowNumber,"Wert"));
-                    }
-                    catch(Exception e)
+                    if(cell.getColumnIndex()==3)
                     {
-                        article=new Article();
-                        article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte Wert nicht vorhanden!");
-                        textArea.add(article);
-                        //isError=true;
-                        //break;
-                        kPI_Fact.setWert(0.0);
+                        String ColumnName="Wert";
+                        try {
+                            kPI_Fact.setWert(checkCellDouble(sheetName, cell, RowNumber,ColumnName));
+                        }
+                        catch(Exception e)
+                        {
+                            article=new Article();
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
+                            textArea.add(article);
+                            Error_count++;
+
+                        }
                     }
 
-
+                }
 
                     listOfKPI_Fact.add(kPI_Fact);
                     System.out.println(listOfKPI_Fact.size()+".............parse");
-                }
 
-            }
-
-            if(isError)
-            {
-                //    button.setEnabled(true);
-                // spinner.setVisible(false);
-                fileName="";
             }
 
             article=new Article();
             article.getStyle().set("white-space","pre-line");
-            article.add(LocalDateTime.now().format(formatter) + ": Info: Anzahl Zeilen: " + listOfKPI_Fact.size());
             article.add("\n");
+            article.add(LocalDateTime.now().format(formatter) + " " + sheetName + ": Count Rows: " + listOfKPI_Fact.size() + " Count Errrors: " + Error_count);
+            article.add("\n");
+            textArea.add(article);
+
 
             System.out.println("Anzahl Zeilen im Excel: " + listOfKPI_Fact.size());
 
@@ -428,7 +435,7 @@ public class Tech_KPIView extends VerticalLayout {
         }
 
     }
-    public List<KPI_Actuals> parseExcelFile_Actuals(InputStream fileData, String fileName) {
+    public List<KPI_Actuals> parseExcelFile_Actuals(InputStream fileData, String fileName, String sheetName) {
 
 
         List<KPI_Actuals> listOfKPI_Actuals = new ArrayList<>();
@@ -449,15 +456,15 @@ public class Tech_KPIView extends VerticalLayout {
 
 
             XSSFWorkbook my_xls_workbook = new XSSFWorkbook(fileData);
-            XSSFSheet my_worksheet = my_xls_workbook.getSheet("KPI_Actuals");
+            XSSFSheet my_worksheet = my_xls_workbook.getSheet(sheetName);
             Iterator<Row> rowIterator = my_worksheet.iterator();
 
             Integer RowNumber=0;
-            Boolean isError=false;
+            Integer Error_count=0;
 
 
 
-            while(rowIterator.hasNext() && !isError)
+            while(rowIterator.hasNext())
             {
                 KPI_Actuals kPI_Actuals = new KPI_Actuals();
                 Row row = rowIterator.next();
@@ -465,7 +472,7 @@ public class Tech_KPIView extends VerticalLayout {
 
                // if (RowNumber>20){ break; }
 
-                kPI_Actuals.setRow(RowNumber);
+
 
                 Iterator<Cell> cellIterator = row.cellIterator();
                 while(cellIterator.hasNext()) {
@@ -477,76 +484,73 @@ public class Tech_KPIView extends VerticalLayout {
 
 
                     Cell cell = cellIterator.next();
+                    kPI_Actuals.setRow(RowNumber);
 
                     if(cell.getColumnIndex()==0)
                     {
+                        String ColumnName="NT ID";
                          try {
-                            kPI_Actuals.setNT_ID(checkCellString(cell, RowNumber,"NT ID"));
+                            kPI_Actuals.setNT_ID(checkCellString(sheetName, cell, RowNumber,ColumnName));
                              }
                         catch(Exception e)
                             {
                                 article=new Article();
-                                article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte NT ID nicht vorhanden!");
+                                article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
                                 textArea.add(article);
-                                isError=true;
-                                break;
+                                Error_count++;
                             }
                     }
 
 
                     if(cell.getColumnIndex()==1) {
-
+                        String ColumnName="WTAC ID";
                         try {
 
-                            kPI_Actuals.setWTAC_ID(checkCellString(cell, RowNumber, "WTAC ID"));
+                            kPI_Actuals.setWTAC_ID(checkCellString(sheetName,cell, RowNumber, ColumnName));
                         } catch (Exception e) {
                             article = new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte WTAC ID nicht vorhanden!");
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
                             textArea.add(article);
-                            isError = true;
-                            break;
+                            Error_count++;
                         }
 
                     }
 
                     if(cell.getColumnIndex()==2) {
-
+                        String ColumnName="sort";
                         try {
-                            kPI_Actuals.setSort(checkCellNumeric(cell, RowNumber, "sort"));
+                            kPI_Actuals.setSort(checkCellNumeric(sheetName, cell, RowNumber, ColumnName));
                         } catch (Exception e) {
                             article = new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte sort nicht vorhanden!");
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
                             textArea.add(article);
-                            isError = true;
-                            break;
+                            Error_count++;
                         }
 
                     }
 
                     if(cell.getColumnIndex()==3) {
-
+                        String ColumnName="M2_Area";
                         try {
-                            kPI_Actuals.setM2_Area(checkCellString(cell, RowNumber, "M2_Area"));
+                            kPI_Actuals.setM2_Area(checkCellString(sheetName, cell, RowNumber, ColumnName));
                         } catch (Exception e) {
                             article = new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte M2_Area nicht vorhanden!");
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
                             textArea.add(article);
-                            isError = true;
-                            break;
+                            Error_count++;
                         }
 
                     }
 
                     if(cell.getColumnIndex()==4) {
-
+                        String ColumnName="M1_Network";
                         try {
-                            kPI_Actuals.setM1_Network(checkCellString(cell, RowNumber, "M1_Network"));
+                            kPI_Actuals.setM1_Network(checkCellString(sheetName, cell, RowNumber, ColumnName));
                         } catch (Exception e) {
                             article = new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte M1_Network nicht vorhanden!");
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
                             textArea.add(article);
-                            isError = true;
-                            break;
+                            Error_count++;
                         }
 
                     }
@@ -554,26 +558,24 @@ public class Tech_KPIView extends VerticalLayout {
                     if(cell.getColumnIndex()==5) {
                         String ColumnName="M3_Service";
                         try {
-                            kPI_Actuals.setM3_Service(checkCellString(cell, RowNumber, ColumnName));
+                            kPI_Actuals.setM3_Service(checkCellString(sheetName, cell, RowNumber, ColumnName));
                         } catch (Exception e) {
                             article = new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + " nicht vorhanden!");
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
                             textArea.add(article);
-                            isError = true;
-                            break;
+                            Error_count++;
                         }
                     }
 
                     if(cell.getColumnIndex()==6) {
                         String ColumnName="M4_Dimension";
                         try {
-                            kPI_Actuals.setM4_Dimension(checkCellString(cell, RowNumber, ColumnName));
+                            kPI_Actuals.setM4_Dimension(checkCellString(sheetName, cell, RowNumber, ColumnName));
                         } catch (Exception e) {
                             article = new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + " nicht vorhanden!");
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
                             textArea.add(article);
-                            isError = true;
-                            break;
+                            Error_count++;
                         }
                     }
 
@@ -581,143 +583,132 @@ public class Tech_KPIView extends VerticalLayout {
                     if(cell.getColumnIndex()==7) {
                         String ColumnName="M5_Tech";
                         try {
-                            kPI_Actuals.setM5_Tech(checkCellString(cell, RowNumber, ColumnName));
+                            kPI_Actuals.setM5_Tech(checkCellString(sheetName, cell, RowNumber, ColumnName));
                         } catch (Exception e) {
                             article = new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + " nicht vorhanden!");
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
                             textArea.add(article);
-                            isError = true;
-                            break;
+                            Error_count++;
                         }
                     }
 
                     if(cell.getColumnIndex()==8) {
                         String ColumnName="M6_Detail";
                         try {
-                            kPI_Actuals.setM6_Detail(checkCellString(cell, RowNumber, ColumnName));
+                            kPI_Actuals.setM6_Detail(checkCellString(sheetName, cell, RowNumber, ColumnName));
                         } catch (Exception e) {
                             article = new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + " nicht vorhanden!");
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
                             textArea.add(article);
-                            isError = true;
-                            break;
+                            Error_count++;
                         }
                     }
 
                     if(cell.getColumnIndex()==9) {
                         String ColumnName="KPI long";
                         try {
-                            kPI_Actuals.setKPI_long(checkCellString(cell, RowNumber, ColumnName));
+                            kPI_Actuals.setKPI_long(checkCellString(sheetName, cell, RowNumber, ColumnName));
                         } catch (Exception e) {
                             article = new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + " nicht vorhanden!");
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
                             textArea.add(article);
-                            isError = true;
-                            break;
+                            Error_count++;
                         }
                     }
 
                     if(cell.getColumnIndex()==10) {
                         String ColumnName="Runrate";
                         try {
-                            kPI_Actuals.setRunrate(checkCellString(cell, RowNumber, ColumnName));
+                            kPI_Actuals.setRunrate(checkCellString(sheetName, cell, RowNumber, ColumnName));
                         } catch (Exception e) {
                             article = new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + " nicht vorhanden!");
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
                             textArea.add(article);
-                            isError = true;
-                            break;
+                            Error_count++;
                         }
                     }
 
                     if(cell.getColumnIndex()==11) {
                         String ColumnName="Unit";
                         try {
-                            kPI_Actuals.setUnit(checkCellString(cell, RowNumber, ColumnName));
+                            kPI_Actuals.setUnit(checkCellString(sheetName, cell, RowNumber, ColumnName));
                         } catch (Exception e) {
                             article = new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + " nicht vorhanden!");
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
                             textArea.add(article);
-                            isError = true;
-                            break;
+                            Error_count++;
                         }
                     }
 
                     if(cell.getColumnIndex()==12) {
                         String ColumnName="Description";
                         try {
-                            kPI_Actuals.setDescription(checkCellString(cell, RowNumber, ColumnName));
+                            kPI_Actuals.setDescription(checkCellString(sheetName, cell, RowNumber, ColumnName));
                         } catch (Exception e) {
                             article = new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + " nicht vorhanden!");
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
                             textArea.add(article);
-                            isError = true;
-                            break;
+                            Error_count++;
                         }
                     }
 
                     if(cell.getColumnIndex()==13) {
                         String ColumnName="SourceReport";
                         try {
-                            kPI_Actuals.setSourceReport(checkCellString(cell, RowNumber, ColumnName));
+                            kPI_Actuals.setSourceReport(checkCellString(sheetName, cell, RowNumber, ColumnName));
                         } catch (Exception e) {
                             article = new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + " nicht vorhanden!");
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
                             textArea.add(article);
-                            isError = true;
-                            break;
+                            Error_count++;
                         }
                     }
 
                     if(cell.getColumnIndex()==14) {
                         String ColumnName="SourceInput";
                         try {
-                            kPI_Actuals.setSourceInput(checkCellString(cell, RowNumber, ColumnName));
+                            kPI_Actuals.setSourceInput(checkCellString(sheetName, cell, RowNumber, ColumnName));
                         } catch (Exception e) {
                             article = new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + " nicht vorhanden!");
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
                             textArea.add(article);
-                            isError = true;
-                            break;
+                            Error_count++;
                         }
                     }
 
                     if(cell.getColumnIndex()==15) {
                         String ColumnName="SourceComment";
                         try {
-                            kPI_Actuals.setSourceComment(checkCellString(cell, RowNumber, ColumnName));
+                            kPI_Actuals.setSourceComment(checkCellString(sheetName, cell, RowNumber, ColumnName));
                         } catch (Exception e) {
                             article = new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + " nicht vorhanden!");
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
                             textArea.add(article);
-                            isError = true;
-                            break;
+                            Error_count++;
                         }
                     }
 
                     if(cell.getColumnIndex()==16) {
                         String ColumnName="SourceContact";
                         try {
-                            kPI_Actuals.setSourceContact(checkCellString(cell, RowNumber, ColumnName));
+                            kPI_Actuals.setSourceContact(checkCellString(sheetName, cell, RowNumber, ColumnName));
                         } catch (Exception e) {
                             article = new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + " nicht vorhanden!");
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
                             textArea.add(article);
-                            isError = true;
-                            break;
+                            Error_count++;
                         }
                     }
 
                     if(cell.getColumnIndex()==17) {
                         String ColumnName="SourceLink";
                         try {
-                            kPI_Actuals.setSourceLink(checkCellString(cell, RowNumber, ColumnName));
+                            kPI_Actuals.setSourceLink(checkCellString(sheetName, cell, RowNumber, ColumnName));
                         } catch (Exception e) {
                             article = new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + " nicht vorhanden!");
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
                             textArea.add(article);
-                            isError = true;
-                            break;
+                            Error_count++;
                         }
                     }
 
@@ -729,17 +720,12 @@ public class Tech_KPIView extends VerticalLayout {
                 System.out.println(listOfKPI_Actuals.size()+".............parse");
             }
 
-            if(isError)
-            {
-                //    button.setEnabled(true);
-               // spinner.setVisible(false);
-                fileName="";
-            }
-
             article=new Article();
             article.getStyle().set("white-space","pre-line");
-            article.add(LocalDateTime.now().format(formatter) + ": Info: Anzahl Zeilen: " + listOfKPI_Actuals.size());
             article.add("\n");
+            article.add(LocalDateTime.now().format(formatter) + " " + sheetName + ": Count Rows: " + listOfKPI_Actuals.size() + " Count Errrors: " + Error_count);
+            article.add("\n");
+            textArea.add(article);
 
 
             System.out.println("Anzahl Zeilen im Excel: " + listOfKPI_Actuals.size());
@@ -753,7 +739,7 @@ public class Tech_KPIView extends VerticalLayout {
 
     }
 
-    public List<KPI_Plan> parseExcelFile_Plan(InputStream fileData, String fileName) {
+    public List<KPI_Plan> parseExcelFile_Plan(InputStream fileData, String fileName, String sheetName) {
 
 
         List<KPI_Plan> listOfKPI_Plan = new ArrayList<>();
@@ -774,15 +760,15 @@ public class Tech_KPIView extends VerticalLayout {
 
 
             XSSFWorkbook my_xls_workbook = new XSSFWorkbook(fileData);
-            XSSFSheet my_worksheet = my_xls_workbook.getSheet("KPI_Plan");
+            XSSFSheet my_worksheet = my_xls_workbook.getSheet(sheetName);
             Iterator<Row> rowIterator = my_worksheet.iterator();
 
             Integer RowNumber=0;
-            Boolean isError=false;
+            Integer Error_count=0;
 
 
 
-            while(rowIterator.hasNext() && !isError)
+            while(rowIterator.hasNext() )
             {
                 KPI_Plan kPI_Plan = new KPI_Plan();
                 Row row = rowIterator.next();
@@ -790,7 +776,7 @@ public class Tech_KPIView extends VerticalLayout {
 
                 // if (RowNumber>20){ break; }
 
-                kPI_Plan.setRow(RowNumber);
+
 
                 Iterator<Cell> cellIterator = row.cellIterator();
                 while(cellIterator.hasNext()) {
@@ -802,19 +788,21 @@ public class Tech_KPIView extends VerticalLayout {
 
 
                     Cell cell = cellIterator.next();
+                    kPI_Plan.setRow(RowNumber);
 
                     if(cell.getColumnIndex()==0)
                     {
+                        String ColumnName="NT ID";
                         try {
-                            kPI_Plan.setNT_ID(checkCellString(cell, RowNumber,"NT ID"));
+                            kPI_Plan.setNT_ID(checkCellString(sheetName, cell, RowNumber,ColumnName));
                         }
                         catch(Exception e)
                         {
                             article=new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte NT ID nicht vorhanden!");
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
                             textArea.add(article);
-                            isError=true;
-                            break;
+                            Error_count++;
+
                         }
                     }
 
@@ -823,39 +811,39 @@ public class Tech_KPIView extends VerticalLayout {
                     if(cell.getColumnIndex()==1) {
                         String ColumnName="Spalte1";
                         try {
-                            kPI_Plan.setSpalte1(checkCellString(cell, RowNumber, ColumnName));
+                            kPI_Plan.setSpalte1(checkCellString(sheetName, cell, RowNumber, ColumnName));
                         } catch (Exception e) {
                             article = new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + " nicht vorhanden!");
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
                             textArea.add(article);
-                            isError = true;
-                            break;
+                            Error_count++;
+
                         }
                     }
 
                     if(cell.getColumnIndex()==2) {
                         String ColumnName="Scenario";
                         try {
-                            kPI_Plan.setScenario(checkCellString(cell, RowNumber, ColumnName));
+                            kPI_Plan.setScenario(checkCellString(sheetName, cell, RowNumber, ColumnName));
                         } catch (Exception e) {
                             article = new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + " nicht vorhanden!");
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
                             textArea.add(article);
-                            isError = true;
-                            break;
+                            Error_count++;
+
                         }
                     }
 
                     if(cell.getColumnIndex()==3) {
                         String ColumnName="VersionDate";
                         try {
-                            kPI_Plan.setVersionDate(checkCellDate(cell, RowNumber, ColumnName));
+                            kPI_Plan.setVersionDate(checkCellDate(sheetName, cell, RowNumber, ColumnName));
                         } catch (Exception e) {
                             article = new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + " nicht vorhanden!");
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
                             textArea.add(article);
-                            isError = true;
-                            break;
+                            Error_count++;
+
                         }
                     }
 
@@ -863,13 +851,13 @@ public class Tech_KPIView extends VerticalLayout {
                     if(cell.getColumnIndex()==4) {
                         String ColumnName="VersionComment";
                         try {
-                            kPI_Plan.setVersionComment(checkCellString(cell, RowNumber, ColumnName));
+                            kPI_Plan.setVersionComment(checkCellString(sheetName, cell, RowNumber, ColumnName));
                         } catch (Exception e) {
                             article = new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + " nicht vorhanden!");
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
                             textArea.add(article);
-                            isError = true;
-                            break;
+                            Error_count++;
+
                         }
                     }
 
@@ -877,13 +865,13 @@ public class Tech_KPIView extends VerticalLayout {
                     if(cell.getColumnIndex()==5) {
                         String ColumnName="Runrate";
                         try {
-                            kPI_Plan.setRunrate(checkCellString(cell, RowNumber, ColumnName));
+                            kPI_Plan.setRunrate(checkCellString(sheetName, cell, RowNumber, ColumnName));
                         } catch (Exception e) {
                             article = new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + " nicht vorhanden!");
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
                             textArea.add(article);
-                            isError = true;
-                            break;
+                            Error_count++;
+
                         }
                     }
 
@@ -895,20 +883,17 @@ public class Tech_KPIView extends VerticalLayout {
                 System.out.println(listOfKPI_Plan.size()+".............parse");
             }
 
-            if(isError)
-            {
-                //    button.setEnabled(true);
-                // spinner.setVisible(false);
-                fileName="";
-            }
+
 
             article=new Article();
             article.getStyle().set("white-space","pre-line");
-            article.add(LocalDateTime.now().format(formatter) + ": Info: Anzahl Zeilen: " + listOfKPI_Actuals.size());
             article.add("\n");
+            article.add(LocalDateTime.now().format(formatter) + " " + sheetName + ": Count Rows: " + listOfKPI_Plan.size() + " Count Errrors: " + Error_count);
+            article.add("\n");
+            textArea.add(article);
 
 
-            System.out.println("Anzahl Zeilen im Excel: " + listOfKPI_Actuals.size());
+            System.out.println("Anzahl Zeilen im Excel: " + listOfKPI_Plan.size());
 
 
             return listOfKPI_Plan;
@@ -919,7 +904,7 @@ public class Tech_KPIView extends VerticalLayout {
 
     }
 
-    private Double checkCellDouble(Cell cell, Integer zeile, String spalte) {
+    private Double checkCellDouble(String sheetName, Cell cell, Integer zeile, String spalte) {
 
         if (cell.getCellType()!=Cell.CELL_TYPE_NUMERIC)
         {
@@ -937,43 +922,49 @@ public class Tech_KPIView extends VerticalLayout {
 
     }
 
-    private String checkCellString(Cell cell, Integer zeile, String spalte) {
+    private String checkCellString(String sheetName, Cell cell, Integer zeile, String spalte) {
 
-        try{
+        try {
 
-            if (cell.getCellType()!=Cell.CELL_TYPE_STRING && !cell.getStringCellValue().isEmpty())
-            {
-
-                var x = cell.getCellType();
-
-                article.add("\nZeile " + zeile.toString() + ", Spalte " + spalte + " ist nicht vom Typ String (evtl. Formel)");
-                textArea.add(article);
-
+        switch (cell.getCellType()){
+            case Cell.CELL_TYPE_NUMERIC:
                 return cell.getStringCellValue();
-            }
-            else
-            {
-                if (cell.getStringCellValue().isEmpty())
-                {
-                    //System.out.println("Info: Zeile " + zeile.toString() + ", Spalte " + spalte + " ist leer");
-                    //detailsText.setValue(detailsText.getValue() + "\nZeile " + zeile.toString() + ", Spalte " + spalte + " ist leer");
-                    article.add("\nZeile " + zeile.toString() + ", Spalte " + spalte + " ist leer");
+            case Cell.CELL_TYPE_STRING:
+                return cell.getStringCellValue();
+            case Cell.CELL_TYPE_FORMULA:
+                return cell.getStringCellValue();
+            case Cell.CELL_TYPE_BLANK:
+                return  "";
+            case Cell.CELL_TYPE_BOOLEAN:
+                return cell.getStringCellValue();
+            case Cell.CELL_TYPE_ERROR:
+                return  "";
+
+        }
+        article.add("\n" + sheetName + " Zeile " + zeile.toString() + ", column >" + spalte + "< konnte in checkCellString nicht aufgelöst werden. Typ=" + cell.getCellType());
+        textArea.add(article);
+
+        }
+        catch(Exception e){
+            switch (e.getMessage()) {
+                case "Cannot get a text value from a error formula cell":
+
+                    article = new Article();
+                    article.setText("\n" + sheetName + ": Info: row >" + zeile.toString() + "<, column " + spalte + ": formula cell error => replaced to empty cell");
                     textArea.add(article);
-                }
-                return  cell.getStringCellValue();
+
+                    return "";
 
             }
+            System.out.println("Zeile " + zeile.toString() + ", Spalte " + spalte + " konnte in checkCellString nicht aufgelöst werden. Typ=" + cell.getCellType() + e.getMessage());
         }
-        catch(Exception e) {
-            System.out.println("Exception: " + e.getMessage());
-            //detailsText.setValue(detailsText.getValue() + "\nZeile " + zeile.toString() + ", Spalte " + spalte + "  konnte nicht gelesen werden, da ExcelTyp Numeric!");
-            article.add("\nZeile " + zeile.toString() + ", Spalte " + spalte + "  konnte nicht gelesen werden, da ExcelTyp Numeric!");
-            textArea.add(article);
-            return "";
-        }
+
+
+       return  "######";
+
     }
 
-    private Date checkCellDate(Cell cell, Integer zeile, String spalte) {
+    private Date checkCellDate(String sheetName, Cell cell, Integer zeile, String spalte) {
         Date date=null;
         try{
 
@@ -1030,11 +1021,34 @@ public class Tech_KPIView extends VerticalLayout {
         }
     }
 
-    private Integer checkCellNumeric(Cell cell, Integer zeile, String spalte) {
+    private Integer checkCellNumeric(String sheetName, Cell cell, Integer zeile, String spalte) {
 
+
+        switch (cell.getCellType()){
+            case Cell.CELL_TYPE_NUMERIC:
+                return  (int) cell.getNumericCellValue();
+             case Cell.CELL_TYPE_STRING:
+                 return 0;
+            case Cell.CELL_TYPE_FORMULA:
+                return 0;
+            case Cell.CELL_TYPE_BLANK:
+                return 0;
+            case Cell.CELL_TYPE_BOOLEAN:
+                return 0;
+            case Cell.CELL_TYPE_ERROR:
+                return 0;
+
+        }
+
+   return null;
+
+
+/*
         if (cell.getCellType()!=Cell.CELL_TYPE_NUMERIC)
         {
-            System.out.println("Zeile " + zeile.toString() + ", Spalte " + spalte + " konnte nicht gelesen werden, da ExcelTyp nicht numerisch!");
+            var CellType =cell.getCellType();
+
+            System.out.println("Zeile " + zeile.toString() + ", Spalte " + spalte + " konnte nicht gelesen werden, da ExcelTyp nicht numerisch, sonder hat Typ: " + CellType );
             //     textArea.setValue(textArea.getValue() + "\n" + LocalDateTime.now().format(formatter) + ": Error: Zeile " + zeile.toString() + ", Spalte " + spalte + " konnte nicht gelesen werden, da ExcelTyp nicht Numeric!");
             article.add("\nZeile " + zeile.toString() + ", Spalte " + spalte + "  konnte nicht gelesen werden, da ExcelTyp nicht Numeric!");
             textArea.add(article);
@@ -1046,7 +1060,11 @@ public class Tech_KPIView extends VerticalLayout {
             return  (int) cell.getNumericCellValue();
         }
 
+ */
+
     }
+
+
 
 
     public class KPI_Fact {
