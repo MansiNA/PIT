@@ -4,11 +4,16 @@ import com.example.application.data.entity.CLTV_HW_Measures;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.accordion.Accordion;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.checkbox.CheckboxGroup;
+import com.vaadin.flow.component.checkbox.CheckboxGroupVariant;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.HeaderRow;
 import com.vaadin.flow.component.html.Article;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.listbox.MultiSelectListBox;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -71,6 +76,8 @@ public class Tech_KPIView extends VerticalLayout {
     Grid<KPI_Actuals> gridActuals;
     Grid<KPI_Plan> gridPlan;
 
+    Grid<QS_Status> gridQS;
+
     //H3 h3_Fact= new H3();
     //H3 h3_Actuals= new H3();
     //H3 h3_Plan= new H3();
@@ -108,6 +115,7 @@ public class Tech_KPIView extends VerticalLayout {
         setupKPIActualsGrid();
         setupKPIFactGrid();
         setupKPIPlanGrid();
+        setupQSGrid();
 
         setupUploader();
 
@@ -131,6 +139,9 @@ public class Tech_KPIView extends VerticalLayout {
         add(hl, progressBarFact, progressBarPlan,progressBarActuals, details );
 
 
+
+
+
         Accordion accordion = new Accordion();
         accordion.add(factInfo, gridFact);
         accordion.add(actualsInfo, gridActuals);
@@ -138,9 +149,37 @@ public class Tech_KPIView extends VerticalLayout {
         accordion.setWidthFull();
         accordion.setHeightFull();
 
-        add(accordion);
+        add(gridQS,accordion);
 
     }
+
+    private void setupQSGrid() {
+        gridQS = new Grid<>(QS_Status.class, true);
+
+        gridQS.setHeight("250px");
+        gridQS.setWidth("600px");
+        gridQS.addThemeVariants(GridVariant.LUMO_NO_BORDER);
+
+      //  gridFact.addColumn(KPI_Fact::getRow).setHeader("Zeile");
+        gridQS.removeAllColumns();
+        gridQS.addColumn(QS_Status::getSheet).setHeader("Sheet");
+        gridQS.addColumn(QS_Status::getQSName).setHeader("QS-Step");
+        gridQS.addColumn(QS_Status::getStatus).setHeader("QS Status");
+        gridQS.getElement().getStyle().set("border", "none");
+
+        gridQS.setItems(new QS_Status("KPI_Plan", "Check Primary Key", "OK")
+                      , new QS_Status("KPI_Plan", "Check Empty Rows", "OK")
+                      , new QS_Status("KPI_Actuals", "Check Primary Key", "OK")
+                      , new QS_Status("KPI_Actuals", "Check Empty Rows", "OK")
+                      , new QS_Status("KPI_Fact", "Check Primary Key", "OK")
+                      , new QS_Status("KPI_Fact", "Check Empty Rows", "OK"));
+
+        gridQS.addThemeVariants(GridVariant.LUMO_ROW_STRIPES);
+
+
+        gridQS.addClassName("small-grid");
+    }
+
     private void savePlanEntities() {
 
         int totalRows = listOfKPI_Plan.size();
@@ -1644,6 +1683,42 @@ public class Tech_KPIView extends VerticalLayout {
 
         public void setRunrate(String runrate) {
             Runrate = runrate;
+        }
+    }
+
+    public class QS_Status{
+        String Sheet;
+        String QSName;
+        String Status;
+
+        public QS_Status(String sheet, String QSName, String status) {
+            Sheet = sheet;
+            this.QSName = QSName;
+            Status = status;
+        }
+
+        public String getSheet() {
+            return Sheet;
+        }
+
+        public void setSheet(String sheet) {
+            Sheet = sheet;
+        }
+
+        public String getQSName() {
+            return QSName;
+        }
+
+        public void setQSName(String QSName) {
+            this.QSName = QSName;
+        }
+
+        public String getStatus() {
+            return Status;
+        }
+
+        public void setStatus(String status) {
+            Status = status;
         }
     }
 

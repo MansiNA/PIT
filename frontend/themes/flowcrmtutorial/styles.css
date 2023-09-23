@@ -9,3 +9,19 @@ a[highlight] {
     font-weight: bold;
     text-decoration: underline;
 }
+
+.small-grid {
+    font-size: 10px; /* Ändern Sie die Schriftgröße */
+    padding: 4px; /* Ändern Sie den Innenabstand */
+    border: 1px solid #ccc; /* Fügen Sie einen Rahmen hinzu */
+}
+
+/* Verkleinern Sie die Header-Texte */
+.small-grid .header-cell {
+    font-size: 10px;
+}
+
+/* Verkleinern Sie die Zellinhalte */
+.small-grid .cell {
+    font-size: 8px;
+}
