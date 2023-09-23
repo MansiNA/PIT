@@ -97,7 +97,7 @@ public class Tech_KPIView extends VerticalLayout {
             saveFactEntities();
             savePlanEntities();
             saveActualsEntities();
-            ui.setPollInterval(-1);
+
         });
 
         setupKPIActualsGrid();
@@ -298,6 +298,7 @@ public class Tech_KPIView extends VerticalLayout {
                 Notification notification = Notification.show(totalRows + " Rows uploaded");
                 notification.setPosition(Notification.Position.MIDDLE);
                 notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                ui.setPollInterval(-1);
             });
 
         }).start();
