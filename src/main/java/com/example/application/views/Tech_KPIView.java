@@ -2,6 +2,7 @@ package com.example.application.views;
 
 import com.example.application.data.entity.CLTV_HW_Measures;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.accordion.Accordion;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.grid.Grid;
@@ -70,9 +71,13 @@ public class Tech_KPIView extends VerticalLayout {
     Grid<KPI_Actuals> gridActuals;
     Grid<KPI_Plan> gridPlan;
 
-    H3 h3_Fact= new H3();
-    H3 h3_Actuals= new H3();
-    H3 h3_Plan= new H3();
+    //H3 h3_Fact= new H3();
+    //H3 h3_Actuals= new H3();
+    //H3 h3_Plan= new H3();
+
+    String factInfo = "KPI_Fact 0 rows";
+    String actualsInfo = "KPI_Actuals 0 rows";
+    String planInfo = "KPI Plan 0 rows";
 
     ProgressBar progressBarFact = new ProgressBar();
     ProgressBar progressBarPlan = new ProgressBar();
@@ -115,13 +120,25 @@ public class Tech_KPIView extends VerticalLayout {
         hl.setAlignItems(Alignment.CENTER);
         hl.add(singleFileUpload,importButton,message);
 
-        h3_Fact.add("Fact 0 rows");
-        h3_Actuals.add("Actuals 0 rows");
-        h3_Plan.add("Plan 0 rows");
+      //  h3_Fact.add("Fact 0 rows");
+        factInfo = "KPI_Fact 0 rows";
+        actualsInfo = "KPI_Actuals 0 rows";
+        planInfo = "KPI Plan 0 rows";
+      //  h3_Actuals.add("Actuals 0 rows");
+      //  h3_Plan.add("Plan 0 rows");
 
-        add(hl, progressBarFact, progressBarPlan,progressBarActuals, details, h3_Fact, gridFact, h3_Actuals, gridActuals, h3_Plan, gridPlan );
+        //add(hl, progressBarFact, progressBarPlan,progressBarActuals, details, h3_Fact, gridFact, h3_Actuals, gridActuals, h3_Plan, gridPlan );
+        add(hl, progressBarFact, progressBarPlan,progressBarActuals, details );
 
 
+        Accordion accordion = new Accordion();
+        accordion.add(factInfo, gridFact);
+        accordion.add(actualsInfo, gridActuals);
+        accordion.add(planInfo, gridPlan);
+        accordion.setWidthFull();
+        accordion.setHeightFull();
+
+        add(accordion);
 
     }
     private void savePlanEntities() {
@@ -465,14 +482,18 @@ public class Tech_KPIView extends VerticalLayout {
             singleFileUpload.clearFileList();
             importButton.setEnabled(true);
             message.setText("2. Button >Import< for upload to Database");
-            h3_Fact.removeAll();
-            h3_Fact.add("Fact (" + listOfKPI_Fact.size() + " rows)");
+            //h3_Fact.removeAll();
+            //h3_Fact.add("Fact (" + listOfKPI_Fact.size() + " rows)");
 
-            h3_Actuals.removeAll();
-            h3_Actuals.add("Actuals (" + listOfKPI_Actuals.size() + " rows)");
+            factInfo="Fact (" + listOfKPI_Fact.size() + " rows)";
+            actualsInfo="Fact (" + listOfKPI_Actuals.size() + " rows)";
+            planInfo="Fact (" + listOfKPI_Plan.size() + " rows)";
 
-            h3_Plan.removeAll();
-            h3_Plan.add("Plan (" + listOfKPI_Plan.size() + " rows)");
+            //h3_Actuals.removeAll();
+            //h3_Actuals.add("Actuals (" + listOfKPI_Actuals.size() + " rows)");
+
+            //h3_Plan.removeAll();
+            //h3_Plan.add("Plan (" + listOfKPI_Plan.size() + " rows)");
 
         });
         System.out.println("setup uploader................over");
@@ -613,6 +634,7 @@ public class Tech_KPIView extends VerticalLayout {
             article.add("\n");
             textArea.add(article);
 
+            planInfo = "KPI Plan 0 rows";
 
             System.out.println("Anzahl Zeilen im Excel: " + listOfKPI_Fact.size());
 
