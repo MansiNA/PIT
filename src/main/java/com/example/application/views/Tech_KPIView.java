@@ -18,6 +18,7 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.progressbar.ProgressBar;
+import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.router.PageTitle;
@@ -100,6 +101,8 @@ public class Tech_KPIView extends VerticalLayout {
     AccordionPanel planPanel;
     AccordionPanel actualsPanel;
 
+    Div htmlDivToDO;
+
     public Tech_KPIView(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
 
@@ -143,14 +146,25 @@ public class Tech_KPIView extends VerticalLayout {
         // Div zur Ansicht hinzufügen
         add(htmlDiv);
 
-        hl.add(singleFileUpload,importButton,message);
+        htmlDivToDO = new Div();
+        // htmlDivQS.getElement().setProperty("innerHTML", "<b style=\"color:blue;\">QS-Übersicht:</b>");
+        htmlDivToDO.getElement().setProperty("innerHTML", "<u>Aktuelles ToDo:</u> <b>Bitte die Datei KPI-DB.xlsx hochladen!</b>");
+
+        add(htmlDivToDO);
+
+        hl.add(singleFileUpload,importButton);
 
       //  h3_Fact.add("Fact 0 rows");
       //  h3_Actuals.add("Actuals 0 rows");
       //  h3_Plan.add("Plan 0 rows");
 
         //add(hl, progressBarFact, progressBarPlan,progressBarActuals, details, h3_Fact, gridFact, h3_Actuals, gridActuals, h3_Plan, gridPlan );
-        add(hl, progressBarFact, progressBarPlan,progressBarActuals, details );
+        add(hl, progressBarFact, progressBarPlan,progressBarActuals);
+
+
+
+
+        add(details);
 
         accordion = new Accordion();
 
@@ -170,7 +184,8 @@ public class Tech_KPIView extends VerticalLayout {
         accordion.close();
 
         Div htmlDivQS = new Div();
-        htmlDivQS.getElement().setProperty("innerHTML", "<b style=\"color:blue;\">QS-Übersicht:</b>");
+       // htmlDivQS.getElement().setProperty("innerHTML", "<b style=\"color:blue;\">QS-Übersicht:</b>");
+        htmlDivQS.getElement().setProperty("innerHTML", "<b>QS-Übersicht:</b>");
 
 
 
@@ -546,6 +561,7 @@ public class Tech_KPIView extends VerticalLayout {
 
             singleFileUpload.clearFileList();
             importButton.setEnabled(true);
+            htmlDivToDO.getElement().setProperty("innerHTML", "<u>ToDo:</u> <b>Wenn keine QS Probleme aufgetreten sind, per Button \"start  Verarbeitung\" weitere Verarbeitung starten</b>");
             message.setText("2. Button >Import< for upload to Database");
             //h3_Fact.removeAll();
             //h3_Fact.add("Fact (" + listOfKPI_Fact.size() + " rows)");
