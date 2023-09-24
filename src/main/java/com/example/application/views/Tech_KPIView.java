@@ -12,6 +12,8 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.HeaderRow;
 import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.listbox.MultiSelectListBox;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -102,6 +104,7 @@ public class Tech_KPIView extends VerticalLayout {
     AccordionPanel actualsPanel;
 
     Div htmlDivToDO;
+    CheckboxGroup<String> TodoList;
 
     public Tech_KPIView(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -131,6 +134,16 @@ public class Tech_KPIView extends VerticalLayout {
 
         message.setText("1. Datei hochladen.");
 
+        TodoList = new CheckboxGroup<>();
+        TodoList.setLabel("ToDo");
+        TodoList.setItems("KPI_DB.xlsx hochladen", "QS checken", "Verarbeitung starten");
+      //  TodoList.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
+
+        TodoList.setEnabled(false);
+
+
+
+
         Details details = new Details("Import Details", textArea);
         details.setOpened(false);
 
@@ -141,16 +154,17 @@ public class Tech_KPIView extends VerticalLayout {
         Div htmlDiv = new Div();
         htmlDiv.getElement().setProperty("innerHTML", "<h2>Import KPI Excel-File</h2><p>Mit dieser Seite lässt sich die KPI_DB.xlsx " +
                 "Datei direkt in die Datenbank einlesen.</br>Die Daten der Blätter \"<b>KPI_Plan</b>\", \"<b>KPI_Actuals</b>\" und \"<b>KPI_Fact</b>\" werden automatisch in die Stage Tabellen <ul><li>Stage_Tech_KPI.KPI_Plan</li><li>Stage_Tech_KPI.KPI_Actuals</li><li>Stage_Tech_KPI.KPI_Fact</li></ul>geladen. " +
-                "Dazu einfach die Datei auswählen oder per drag&drop hochladen.</p>Nach einer entsprechenden QS-Rückmeldung bzgl. Datenqualität, kann die weitere Verarbeitung per Button \"Freigabe\" erfolgen.");
+                "Dazu einfach die Datei auswählen oder per drag&drop hochladen. </br>Nach einer entsprechenden QS-Rückmeldung bzgl. Datenqualität, kann die weitere Verarbeitung per Button \"Freigabe\" erfolgen.");
 
         // Div zur Ansicht hinzufügen
         add(htmlDiv);
 
         htmlDivToDO = new Div();
         // htmlDivQS.getElement().setProperty("innerHTML", "<b style=\"color:blue;\">QS-Übersicht:</b>");
-        htmlDivToDO.getElement().setProperty("innerHTML", "<u>Aktuelles ToDo:</u> <b>Bitte die Datei KPI-DB.xlsx hochladen!</b>");
+        htmlDivToDO.getElement().setProperty("innerHTML", "<h4><u>Aktuelles ToDo:</u> <b>Bitte die Datei KPI-DB.xlsx hochladen!</b></h4>");
 
-        add(htmlDivToDO);
+        //add(htmlDivToDO);
+        add(TodoList);
 
         hl.add(singleFileUpload,importButton);
 
@@ -196,29 +210,46 @@ public class Tech_KPIView extends VerticalLayout {
     private void setupQSGrid() {
         gridQS = new Grid<>(QS_Status.class, false);
 
-        gridQS.setHeight("200px");
-        gridQS.setWidth("600px");
+        gridQS.setHeight("220px");
+        gridQS.setWidth("500px");
       //  gridQS.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
       //  gridFact.addColumn(KPI_Fact::getRow).setHeader("Zeile");
         gridQS.addColumn(QS_Status::getSheet).setResizable(true).setHeader("Sheet");
         gridQS.addColumn(QS_Status::getQSName).setResizable(true).setHeader("QS-Step");
-        gridQS.addColumn(QS_Status::getStatus).setResizable(true).setHeader("QS Status");
-       // gridQS.getElement().getStyle().set("border", "none");
+        gridQS.addComponentColumn(item -> createStatusIcon(item.getStatus()))
+                .setTooltipGenerator(item -> item.getStatus())
+                .setHeader("QS-Status");
+        gridQS.getElement().getStyle().set("border", "none");
 
         gridQS.setItems(new QS_Status("KPI_Plan", "Check Primary Key", "OK")
-                      , new QS_Status("KPI_Plan", "Check Empty Rows", "OK")
+                      , new QS_Status("KPI_Plan", "Check Empty Rows", "Error")
                       , new QS_Status("KPI_Actuals", "Check Primary Key", "OK")
                       , new QS_Status("KPI_Actuals", "Check Empty Rows", "OK")
                       , new QS_Status("KPI_Fact", "Check Primary Key", "OK")
+                      , new QS_Status("KPI_Fact", "Check Scenario Column", "OK")
                       , new QS_Status("KPI_Fact", "Check Empty Rows", "OK"));
 
         gridQS.addThemeVariants(GridVariant.LUMO_ROW_STRIPES);
-        gridQS.addThemeVariants(GridVariant.LUMO_COMPACT);
+       gridQS.addThemeVariants(GridVariant.LUMO_COMPACT);
         gridQS.addThemeVariants(GridVariant.LUMO_COLUMN_BORDERS);
 
 
         gridQS.addClassName("small-grid");
+    }
+
+    private Icon createStatusIcon(String status) {
+        boolean isAvailable = "OK".equals(status);
+        Icon icon;
+        if (isAvailable) {
+            icon = VaadinIcon.CHECK.create();
+            icon.getElement().getThemeList().add("badge success");
+        } else {
+            icon = VaadinIcon.CLOSE_SMALL.create();
+            icon.getElement().getThemeList().add("badge error");
+        }
+        icon.getStyle().set("padding", "var(--lumo-space-xs");
+        return icon;
     }
 
     private void savePlanEntities() {
@@ -561,8 +592,9 @@ public class Tech_KPIView extends VerticalLayout {
 
             singleFileUpload.clearFileList();
             importButton.setEnabled(true);
-            htmlDivToDO.getElement().setProperty("innerHTML", "<u>ToDo:</u> <b>Wenn keine QS Probleme aufgetreten sind, per Button \"start  Verarbeitung\" weitere Verarbeitung starten</b>");
+            htmlDivToDO.getElement().setProperty("innerHTML", "<u>ToDo:</u> <b>Wenn keine QS Probleme aufgetreten sind, per Button \"Freigabe\" weitere Verarbeitung starten</b>");
             message.setText("2. Button >Import< for upload to Database");
+            TodoList.select("KPI_DB hochladen");
             //h3_Fact.removeAll();
             //h3_Fact.add("Fact (" + listOfKPI_Fact.size() + " rows)");
 

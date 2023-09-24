@@ -11,16 +11,16 @@ a[highlight] {
 }
 
 .small-grid {
-    font-size: 18px !important;
+    font-size: 10px;
     padding: 4px; /* Ändern Sie den Innenabstand */
-    color: blue;
+    color: MidnightBlue;
     border: 1px solid #ccc; /* Fügen Sie einen Rahmen hinzu */
 }
 
 /* Verkleinern Sie die Header-Texte */
 .small-grid .header-cell {
-    font-size: 10px;
-    color: blue !important;
+    font-size: 12px;
+    color: black;
 }
 
 /* Verkleinern Sie die Zellinhalte */

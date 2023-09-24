@@ -435,7 +435,7 @@
   "flowcrmtutorial": "{\n  \"lumoImports\" : [ \"typography\", \"color\", \"spacing\", \"badge\", \"utility\" ]\n}"
  },
  "entryScripts": [
-  "VAADIN/build/indexhtml-c988a78a.js"
+  "VAADIN/build/indexhtml-70ff0797.js"
  ],
  "webComponents": [],
  "cvdlModules": {
@@ -470,6 +470,6 @@
  },
  "packageJsonHash": "8f50a3ca816cb4b6710434094b62062666ad3a54fdff0b7c2a2b801490295993",
  "indexHtmlGenerated": [
-  "  <script type=\"module\" crossorigin src=\"./VAADIN/build/indexhtml-c988a78a.js\"></script>"
+  "  <script type=\"module\" crossorigin src=\"./VAADIN/build/indexhtml-70ff0797.js\"></script>"
  ]
 }
