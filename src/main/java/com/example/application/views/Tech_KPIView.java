@@ -3,6 +3,7 @@ package com.example.application.views;
 import com.example.application.data.entity.CLTV_HW_Measures;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.accordion.Accordion;
+import com.vaadin.flow.component.accordion.AccordionPanel;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.checkbox.CheckboxGroupVariant;
@@ -74,8 +75,6 @@ public class Tech_KPIView extends VerticalLayout {
     Grid<KPI_Actuals> gridActuals;
     Grid<KPI_Plan> gridPlan;
 
-    Grid<Load_Status> gridLoadStatus;
-
     Grid<QS_Status> gridQS;
 
     //H3 h3_Fact= new H3();
@@ -96,6 +95,10 @@ public class Tech_KPIView extends VerticalLayout {
     private List<KPI_Actuals> listOfKPI_Actuals = new ArrayList<KPI_Actuals>();
 
     private List<KPI_Plan> listOfKPI_Plan = new ArrayList<KPI_Plan>();
+    Accordion accordion;
+    AccordionPanel factPanel;
+    AccordionPanel planPanel;
+    AccordionPanel actualsPanel;
 
     public Tech_KPIView(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -120,7 +123,6 @@ public class Tech_KPIView extends VerticalLayout {
         setupKPIFactGrid();
         setupKPIPlanGrid();
         setupQSGrid();
-        setupLoadStatusGrid();
 
         setupUploader();
 
@@ -129,8 +131,6 @@ public class Tech_KPIView extends VerticalLayout {
         Details details = new Details("Import Details", textArea);
         details.setOpened(false);
 
-        Details qsDetails= new Details("QS-Übersicht", gridQS);
-        qsDetails.setOpened(false);
 
         HorizontalLayout hl = new HorizontalLayout();
         hl.setAlignItems(Alignment.CENTER);
@@ -146,51 +146,35 @@ public class Tech_KPIView extends VerticalLayout {
         hl.add(singleFileUpload,importButton,message);
 
       //  h3_Fact.add("Fact 0 rows");
-        factInfo = "KPI_Fact";
-        actualsInfo = "KPI_Actuals";
-        planInfo = "KPI Plan";
       //  h3_Actuals.add("Actuals 0 rows");
       //  h3_Plan.add("Plan 0 rows");
 
         //add(hl, progressBarFact, progressBarPlan,progressBarActuals, details, h3_Fact, gridFact, h3_Actuals, gridActuals, h3_Plan, gridPlan );
         add(hl, progressBarFact, progressBarPlan,progressBarActuals, details );
 
+        accordion = new Accordion();
+
+        factPanel = new AccordionPanel("KPI_Fact (not loaded)", gridFact);
+        accordion.add(factPanel);
+        planPanel = new AccordionPanel("KPI_Plan (not loaded)", gridPlan);
+        accordion.add(planPanel);
+        actualsPanel = new AccordionPanel("KPI_Actuals (not loaded)", gridActuals);
+        accordion.add(actualsPanel);
 
 
-        Accordion accordion = new Accordion();
-        accordion.add(factInfo, gridFact);
-        accordion.add(actualsInfo, gridActuals);
-        accordion.add(planInfo, gridPlan);
+        accordion.add(actualsPanel);
+        accordion.add(factPanel);
+        accordion.add(planPanel);
         accordion.setWidthFull();
         accordion.setHeightFull();
         accordion.close();
 
-        add(gridLoadStatus,qsDetails,accordion);
-
-    }
-
-    private void setupLoadStatusGrid() {
-
-        gridLoadStatus=new Grid<>(Load_Status.class,false);
-
-        gridLoadStatus.setHeight("100px");
-        gridLoadStatus.setWidth("600px");
-        //  gridQS.addThemeVariants(GridVariant.LUMO_NO_BORDER);
-
-        //  gridFact.addColumn(KPI_Fact::getRow).setHeader("Zeile");
-        gridLoadStatus.addColumn(Load_Status::getSheet).setResizable(true).setHeader("Sheet");
-        gridLoadStatus.addColumn(Load_Status::getCountRows).setResizable(true).setHeader("Count Rows");
-        gridLoadStatus.addColumn(Load_Status::getqsStatus).setResizable(true).setHeader("QS Status");
+        Div htmlDivQS = new Div();
+        htmlDivQS.getElement().setProperty("innerHTML", "<b style=\"color:blue;\">QS-Übersicht:</b>");
 
 
-        gridLoadStatus.setItems(new Load_Status("KPI_Plan", 2300, "OK")
-                , new Load_Status("KPI_Plan", 234, "OK")
-                , new Load_Status("KPI_Actuals", 561, "OK"));
 
-        gridLoadStatus.addThemeVariants(GridVariant.LUMO_ROW_STRIPES);
-        gridLoadStatus.addThemeVariants(GridVariant.LUMO_COMPACT);
-        gridLoadStatus.addThemeVariants(GridVariant.LUMO_COLUMN_BORDERS);
-
+        add(htmlDivQS,gridQS,accordion);
 
     }
 
@@ -718,7 +702,9 @@ public class Tech_KPIView extends VerticalLayout {
             planInfo = "KPI Plan 0 rows";
 
             System.out.println("Anzahl Zeilen im Excel: " + listOfKPI_Fact.size());
-
+            accordion.remove(factPanel);
+            factPanel = new AccordionPanel( "KPI_Fact (" + listOfKPI_Fact.size()+ " rows)", gridFact);
+            accordion.add(factPanel);
 
             return listOfKPI_Fact;
         } catch (Exception e) {
@@ -1021,7 +1007,9 @@ public class Tech_KPIView extends VerticalLayout {
 
 
             System.out.println("Anzahl Zeilen im Excel: " + listOfKPI_Actuals.size());
-
+            accordion.remove(actualsPanel);
+            actualsPanel = new AccordionPanel( "KPI_Actuals (" + listOfKPI_Actuals.size()+ " rows)", gridActuals);
+            accordion.add(actualsPanel);
 
             return listOfKPI_Actuals;
         } catch (Exception e) {
@@ -1197,6 +1185,9 @@ public class Tech_KPIView extends VerticalLayout {
 
             System.out.println("Anzahl Zeilen im Excel: " + listOfKPI_Plan.size());
 
+            accordion.remove(planPanel);
+            planPanel = new AccordionPanel( "KPI_Plan (" + listOfKPI_Plan.size()+ " rows)", gridPlan);
+            accordion.add(planPanel);
 
             return listOfKPI_Plan;
         } catch (Exception e) {
@@ -1764,40 +1755,4 @@ public class Tech_KPIView extends VerticalLayout {
         }
     }
 
-    public class Load_Status{
-        String sheet;
-        Integer countRows;
-        String qsStatus;
-
-        public Load_Status(String sheet, Integer countRows, String qsStatus) {
-            this.sheet = sheet;
-            this.countRows = countRows;
-            this.qsStatus = qsStatus;
-        }
-
-        public String getSheet() {
-            return sheet;
-        }
-
-        public void setSheet(String sheet) {
-            this.sheet = sheet;
-        }
-
-        public Integer getCountRows() {
-            return countRows;
-        }
-
-        public void setCountRows(Integer countRows) {
-            this.countRows = countRows;
-        }
-
-        public String getqsStatus() {
-            return qsStatus;
-        }
-
-        public void setqsStatus(String loadStatus) {
-            this.qsStatus = loadStatus;
-        }
-    }
-
-}
+   }
