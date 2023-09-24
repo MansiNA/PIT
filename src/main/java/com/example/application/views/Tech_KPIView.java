@@ -51,6 +51,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Route(value="Tech_KPI", layout = MainLayout.class)
 @PageTitle("Tech KPI | TEF-Control")
@@ -136,10 +137,35 @@ public class Tech_KPIView extends VerticalLayout {
 
         TodoList = new CheckboxGroup<>();
         TodoList.setLabel("ToDo");
-        TodoList.setItems("KPI_DB.xlsx hochladen", "QS checken", "Verarbeitung starten");
+        TodoList.setItems("KPI_DB.xlsx hochladen");
+
+        TodoList.addValueChangeListener(event -> {
+            String selectedItems = event.getValue().stream()
+                    .collect(Collectors.joining(", "));
+         //   System.out.println("Ausgewählte: " + selectedItems);
+
+            if (selectedItems.contains("KPI_DB.xlsx hochladen") && !selectedItems.contains("QS checken"))
+            {
+            //    Notification notification = Notification.show("Bitte zuerst KPI_DB.xlsx hochladen!",5000, Notification.Position.MIDDLE);
+            //    notification.addThemeVariants(NotificationVariant.LUMO_WARNING);
+                TodoList.deselect("KPI_DB.xlsx hochladen");
+            }
+
+
+            if (selectedItems.contains("Freigabe drücken") && !selectedItems.contains("QS checken"))
+            {
+                Notification notification = Notification.show("Bitte zuerst QS checken und bestätigen!",5000, Notification.Position.MIDDLE);
+                notification.addThemeVariants(NotificationVariant.LUMO_WARNING);
+                TodoList.deselect("Freigabe drücken");
+
+            }
+
+        });
+
+      //  TodoList.setItems("KPI_DB.xlsx hochladen", "QS checken", "Verarbeitung starten");
       //  TodoList.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
 
-        TodoList.setEnabled(false);
+        //TodoList.setEnabled(false);
 
 
 
@@ -594,7 +620,11 @@ public class Tech_KPIView extends VerticalLayout {
             importButton.setEnabled(true);
             htmlDivToDO.getElement().setProperty("innerHTML", "<u>ToDo:</u> <b>Wenn keine QS Probleme aufgetreten sind, per Button \"Freigabe\" weitere Verarbeitung starten</b>");
             message.setText("2. Button >Import< for upload to Database");
-            TodoList.select("KPI_DB hochladen");
+
+            TodoList.setItems("KPI_DB.xlsx hochladen", "QS checken", "Freigabe drücken");
+            TodoList.select("KPI_DB.xlsx hochladen");
+          //  TodoList.setEnabled(true);
+
             //h3_Fact.removeAll();
             //h3_Fact.add("Fact (" + listOfKPI_Fact.size() + " rows)");
 
