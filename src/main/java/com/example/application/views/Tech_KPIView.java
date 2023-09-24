@@ -126,8 +126,11 @@ public class Tech_KPIView extends VerticalLayout {
 
         message.setText("1. Datei hochladen.");
 
-        Details details = new Details("details", textArea);
+        Details details = new Details("Import Details", textArea);
         details.setOpened(false);
+
+        Details qsDetails= new Details("QS-Übersicht", gridQS);
+        qsDetails.setOpened(false);
 
         HorizontalLayout hl = new HorizontalLayout();
         hl.setAlignItems(Alignment.CENTER);
@@ -162,7 +165,7 @@ public class Tech_KPIView extends VerticalLayout {
         accordion.setHeightFull();
         accordion.close();
 
-        add(gridLoadStatus,gridQS,accordion);
+        add(gridLoadStatus,qsDetails,accordion);
 
     }
 
