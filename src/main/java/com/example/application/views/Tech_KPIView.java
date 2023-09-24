@@ -10,9 +10,7 @@ import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.HeaderRow;
-import com.vaadin.flow.component.html.Article;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.listbox.MultiSelectListBox;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -76,11 +74,15 @@ public class Tech_KPIView extends VerticalLayout {
     Grid<KPI_Actuals> gridActuals;
     Grid<KPI_Plan> gridPlan;
 
+    Grid<Load_Status> gridLoadStatus;
+
     Grid<QS_Status> gridQS;
 
     //H3 h3_Fact= new H3();
     //H3 h3_Actuals= new H3();
     //H3 h3_Plan= new H3();
+
+    Article description = new Article();
 
     String factInfo = "KPI_Fact 0 rows";
     String actualsInfo = "KPI_Actuals 0 rows";
@@ -112,10 +114,13 @@ public class Tech_KPIView extends VerticalLayout {
 
         });
 
+        description.add("Tool für upload der KPI-Excel Tabelle.\n Bitte als 1. Datei hochladen.");
+
         setupKPIActualsGrid();
         setupKPIFactGrid();
         setupKPIPlanGrid();
         setupQSGrid();
+        setupLoadStatusGrid();
 
         setupUploader();
 
@@ -126,19 +131,26 @@ public class Tech_KPIView extends VerticalLayout {
 
         HorizontalLayout hl = new HorizontalLayout();
         hl.setAlignItems(Alignment.CENTER);
+
+        Div htmlDiv = new Div();
+        htmlDiv.getElement().setProperty("innerHTML", "<h2>Import KPI Excel-File</h2><p>Mit dieser Seite lässt sich die KPI_DB.xlsx " +
+                "Datei direkt in die Datenbank einlesen.</br>Die Daten der Blätter \"<b>KPI_Plan</b>\", \"<b>KPI_Actuals</b>\" und \"<b>KPI_Fact</b>\" werden automatisch in die Stage Tabellen <ul><li>Stage_Tech_KPI.KPI_Plan</li><li>Stage_Tech_KPI.KPI_Actuals</li><li>Stage_Tech_KPI.KPI_Fact</li></ul>geladen. " +
+                "Dazu einfach die Datei auswählen oder per drag&drop hochladen.</p>Nach einer entsprechenden QS-Rückmeldung bzgl. Datenqualität, kann die weitere Verarbeitung per Button \"Freigabe\" erfolgen.");
+
+        // Div zur Ansicht hinzufügen
+        add(htmlDiv);
+
         hl.add(singleFileUpload,importButton,message);
 
       //  h3_Fact.add("Fact 0 rows");
-        factInfo = "KPI_Fact 0 rows";
-        actualsInfo = "KPI_Actuals 0 rows";
-        planInfo = "KPI Plan 0 rows";
+        factInfo = "KPI_Fact";
+        actualsInfo = "KPI_Actuals";
+        planInfo = "KPI Plan";
       //  h3_Actuals.add("Actuals 0 rows");
       //  h3_Plan.add("Plan 0 rows");
 
         //add(hl, progressBarFact, progressBarPlan,progressBarActuals, details, h3_Fact, gridFact, h3_Actuals, gridActuals, h3_Plan, gridPlan );
         add(hl, progressBarFact, progressBarPlan,progressBarActuals, details );
-
-
 
 
 
@@ -148,24 +160,49 @@ public class Tech_KPIView extends VerticalLayout {
         accordion.add(planInfo, gridPlan);
         accordion.setWidthFull();
         accordion.setHeightFull();
+        accordion.close();
 
-        add(gridQS,accordion);
+        add(gridLoadStatus,gridQS,accordion);
+
+    }
+
+    private void setupLoadStatusGrid() {
+
+        gridLoadStatus=new Grid<>(Load_Status.class,false);
+
+        gridLoadStatus.setHeight("100px");
+        gridLoadStatus.setWidth("600px");
+        //  gridQS.addThemeVariants(GridVariant.LUMO_NO_BORDER);
+
+        //  gridFact.addColumn(KPI_Fact::getRow).setHeader("Zeile");
+        gridLoadStatus.addColumn(Load_Status::getSheet).setResizable(true).setHeader("Sheet");
+        gridLoadStatus.addColumn(Load_Status::getCountRows).setResizable(true).setHeader("Count Rows");
+        gridLoadStatus.addColumn(Load_Status::getqsStatus).setResizable(true).setHeader("QS Status");
+
+
+        gridLoadStatus.setItems(new Load_Status("KPI_Plan", 2300, "OK")
+                , new Load_Status("KPI_Plan", 234, "OK")
+                , new Load_Status("KPI_Actuals", 561, "OK"));
+
+        gridLoadStatus.addThemeVariants(GridVariant.LUMO_ROW_STRIPES);
+        gridLoadStatus.addThemeVariants(GridVariant.LUMO_COMPACT);
+        gridLoadStatus.addThemeVariants(GridVariant.LUMO_COLUMN_BORDERS);
+
 
     }
 
     private void setupQSGrid() {
-        gridQS = new Grid<>(QS_Status.class, true);
+        gridQS = new Grid<>(QS_Status.class, false);
 
-        gridQS.setHeight("250px");
+        gridQS.setHeight("200px");
         gridQS.setWidth("600px");
-        gridQS.addThemeVariants(GridVariant.LUMO_NO_BORDER);
+      //  gridQS.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
       //  gridFact.addColumn(KPI_Fact::getRow).setHeader("Zeile");
-        gridQS.removeAllColumns();
-        gridQS.addColumn(QS_Status::getSheet).setHeader("Sheet");
-        gridQS.addColumn(QS_Status::getQSName).setHeader("QS-Step");
-        gridQS.addColumn(QS_Status::getStatus).setHeader("QS Status");
-        gridQS.getElement().getStyle().set("border", "none");
+        gridQS.addColumn(QS_Status::getSheet).setResizable(true).setHeader("Sheet");
+        gridQS.addColumn(QS_Status::getQSName).setResizable(true).setHeader("QS-Step");
+        gridQS.addColumn(QS_Status::getStatus).setResizable(true).setHeader("QS Status");
+       // gridQS.getElement().getStyle().set("border", "none");
 
         gridQS.setItems(new QS_Status("KPI_Plan", "Check Primary Key", "OK")
                       , new QS_Status("KPI_Plan", "Check Empty Rows", "OK")
@@ -175,6 +212,8 @@ public class Tech_KPIView extends VerticalLayout {
                       , new QS_Status("KPI_Fact", "Check Empty Rows", "OK"));
 
         gridQS.addThemeVariants(GridVariant.LUMO_ROW_STRIPES);
+        gridQS.addThemeVariants(GridVariant.LUMO_COMPACT);
+        gridQS.addThemeVariants(GridVariant.LUMO_COLUMN_BORDERS);
 
 
         gridQS.addClassName("small-grid");
@@ -191,7 +230,7 @@ public class Tech_KPIView extends VerticalLayout {
 
 
         message.setText(LocalDateTime.now().format(formatter) + ": Info: saving KPI_Plan to database...");
-        truncateTable("[PIT].[Stage_Tech_KPI].[KPI_Plan]");
+        truncateTable("[Stage_Tech_KPI].[KPI_Plan]");
         new Thread(() -> {
 
             // Do some long running task
@@ -251,7 +290,7 @@ public class Tech_KPIView extends VerticalLayout {
 
         message.setText(message.getText() + "\n" + LocalDateTime.now().format(formatter) + ": Info: saving " + sheet + " to database...");
 
-        truncateTable("[PIT].[Stage_Tech_KPI].[KPI_Actuals]");
+        truncateTable("[Stage_Tech_KPI].[KPI_Actuals]");
 
         new Thread(() -> {
 
@@ -312,7 +351,7 @@ public class Tech_KPIView extends VerticalLayout {
 
 
         message.setText(LocalDateTime.now().format(formatter) + ": Info: saving KPI_Fact to database...");
-        truncateTable("[PIT].[Stage_Tech_KPI].[KPI_Fact]");
+        truncateTable("[Stage_Tech_KPI].[KPI_Fact]");
         new Thread(() -> {
 
                     // Do some long running task
@@ -371,7 +410,7 @@ public class Tech_KPIView extends VerticalLayout {
 
     private void saveActualsBlock(List<KPI_Actuals> batchData) {
 
-        String sql = "INSERT INTO [PIT].[Stage_Tech_KPI].[KPI_Actuals] ([NT_ID],[WTAC_ID],[sort],[M2_Area],[M1_Network],[M3_Service],[M4_Dimension],[M5_Tech],[M6_Detail],[KPI_long],[Runrate],[Unit],[Description],[SourceReport],[SourceInput],[SourceComment] ,[SourceContact] ,[SourceLink] ) VALUES (?, ?, ?, ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        String sql = "INSERT INTO [Stage_Tech_KPI].[KPI_Actuals] ([NT_ID],[WTAC_ID],[sort],[M2_Area],[M1_Network],[M3_Service],[M4_Dimension],[M5_Tech],[M6_Detail],[KPI_long],[Runrate],[Unit],[Description],[SourceReport],[SourceInput],[SourceComment] ,[SourceContact] ,[SourceLink] ) VALUES (?, ?, ?, ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
         jdbcTemplate.batchUpdate(sql, batchData, batchData.size(), (ps, entity) -> {
             ps.setString(1, entity.getNT_ID());
@@ -397,7 +436,7 @@ public class Tech_KPIView extends VerticalLayout {
     }
     private void savePlanBlock(List<KPI_Plan> batchData) {
 
-        String sql = "INSERT INTO [PIT].[Stage_Tech_KPI].[KPI_Plan] (NT_ID, Spalte1, Scenario, VersionDate, VersionComment, Runrate) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO [Stage_Tech_KPI].[KPI_Plan] (NT_ID, Spalte1, Scenario, VersionDate, VersionComment, Runrate) VALUES (?, ?, ?, ?, ?, ?)";
 
         jdbcTemplate.batchUpdate(sql, batchData, batchData.size(), (ps, entity) -> {
 
@@ -421,7 +460,7 @@ public class Tech_KPIView extends VerticalLayout {
     }
     private void saveFactBlock(List<KPI_Fact> batchData) {
 
-        String sql = "INSERT INTO [PIT].[Stage_Tech_KPI].[KPI_Fact] (NT_ID, Scenario,[Date],Wert) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO [Stage_Tech_KPI].[KPI_Fact] (NT_ID, Scenario,[Date],Wert) VALUES (?, ?, ?, ?)";
 
         jdbcTemplate.batchUpdate(sql, batchData, batchData.size(), (ps, entity) -> {
                 ps.setString(1, entity.getNT_ID());
@@ -1719,6 +1758,42 @@ public class Tech_KPIView extends VerticalLayout {
 
         public void setStatus(String status) {
             Status = status;
+        }
+    }
+
+    public class Load_Status{
+        String sheet;
+        Integer countRows;
+        String qsStatus;
+
+        public Load_Status(String sheet, Integer countRows, String qsStatus) {
+            this.sheet = sheet;
+            this.countRows = countRows;
+            this.qsStatus = qsStatus;
+        }
+
+        public String getSheet() {
+            return sheet;
+        }
+
+        public void setSheet(String sheet) {
+            this.sheet = sheet;
+        }
+
+        public Integer getCountRows() {
+            return countRows;
+        }
+
+        public void setCountRows(Integer countRows) {
+            this.countRows = countRows;
+        }
+
+        public String getqsStatus() {
+            return qsStatus;
+        }
+
+        public void setqsStatus(String loadStatus) {
+            this.qsStatus = loadStatus;
         }
     }
 
