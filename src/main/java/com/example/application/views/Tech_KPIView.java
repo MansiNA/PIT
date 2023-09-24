@@ -64,7 +64,7 @@ public class Tech_KPIView extends VerticalLayout {
     Div textArea = new Div();
     Div message = new Div();
     UI ui=UI.getCurrent();
-    Button importButton = new Button("Import");
+    Button importButton = new Button("Freigabe");
     MemoryBuffer memoryBuffer = new MemoryBuffer();
     Upload singleFileUpload = new Upload(memoryBuffer);
 
@@ -135,6 +135,7 @@ public class Tech_KPIView extends VerticalLayout {
 
         message.setText("1. Datei hochladen.");
 
+
         TodoList = new CheckboxGroup<>();
         TodoList.setLabel("ToDo");
         TodoList.setItems("KPI_DB.xlsx hochladen");
@@ -144,7 +145,7 @@ public class Tech_KPIView extends VerticalLayout {
                     .collect(Collectors.joining(", "));
          //   System.out.println("Ausgewählte: " + selectedItems);
 
-            if (selectedItems.contains("KPI_DB.xlsx hochladen") && !selectedItems.contains("QS checken"))
+            if (selectedItems.contains("KPI_DB.xlsx hochladen"))
             {
             //    Notification notification = Notification.show("Bitte zuerst KPI_DB.xlsx hochladen!",5000, Notification.Position.MIDDLE);
             //    notification.addThemeVariants(NotificationVariant.LUMO_WARNING);
@@ -152,18 +153,16 @@ public class Tech_KPIView extends VerticalLayout {
             }
 
 
-            if (selectedItems.contains("Freigabe drücken") && !selectedItems.contains("QS checken"))
+            if (selectedItems.contains("QS bestätigen"))
             {
-                Notification notification = Notification.show("Bitte zuerst QS checken und bestätigen!",5000, Notification.Position.MIDDLE);
-                notification.addThemeVariants(NotificationVariant.LUMO_WARNING);
-                TodoList.deselect("Freigabe drücken");
+                importButton.setEnabled(true);
 
             }
 
         });
 
       //  TodoList.setItems("KPI_DB.xlsx hochladen", "QS checken", "Verarbeitung starten");
-      //  TodoList.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
+        TodoList.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
 
         //TodoList.setEnabled(false);
 
@@ -200,8 +199,6 @@ public class Tech_KPIView extends VerticalLayout {
 
         //add(hl, progressBarFact, progressBarPlan,progressBarActuals, details, h3_Fact, gridFact, h3_Actuals, gridActuals, h3_Plan, gridPlan );
         add(hl, progressBarFact, progressBarPlan,progressBarActuals);
-
-
 
 
         add(details);
@@ -327,7 +324,6 @@ public class Tech_KPIView extends VerticalLayout {
 
                 progressBarPlan.setVisible(false);
                 message.setText(LocalDateTime.now().format(formatter) + ": Info: saved " + totalRows + " rows");
-                importButton.setEnabled(true);
                 Notification notification = Notification.show(totalRows + " Rows uploaded");
                 notification.setPosition(Notification.Position.MIDDLE);
                 notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
@@ -388,7 +384,6 @@ public class Tech_KPIView extends VerticalLayout {
 
                 progressBarActuals.setVisible(false);
                 message.setText(message.getText() + "\n" + LocalDateTime.now().format(formatter) + ": Info: " + sheet+ " saved " + totalRows + " rows");
-                importButton.setEnabled(true);
                 Notification notification = Notification.show(sheet + " " + totalRows + " Rows uploaded");
                 notification.setPosition(Notification.Position.MIDDLE);
                 notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
@@ -448,7 +443,6 @@ public class Tech_KPIView extends VerticalLayout {
 
                 progressBarFact.setVisible(false);
                 message.setText(LocalDateTime.now().format(formatter) + ": Info: saved " + totalRows + " rows");
-                importButton.setEnabled(true);
                 Notification notification = Notification.show(totalRows + " Rows uploaded");
                 notification.setPosition(Notification.Position.MIDDLE);
                 notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
@@ -602,9 +596,6 @@ public class Tech_KPIView extends VerticalLayout {
             fileName = event.getFileName();
             contentLength = event.getContentLength();
             mimeType = event.getMIMEType();
-            importButton.setEnabled(true);
-
-
 
             listOfKPI_Fact = parseExcelFile_Fact(fileData_Fact, fileName,"KPI_Fact");
             listOfKPI_Actuals = parseExcelFile_Actuals(fileData_Actuals, fileName,"KPI_Actuals");
@@ -617,12 +608,12 @@ public class Tech_KPIView extends VerticalLayout {
             gridPlan.setItems(listOfKPI_Plan);
 
             singleFileUpload.clearFileList();
-            importButton.setEnabled(true);
+
             htmlDivToDO.getElement().setProperty("innerHTML", "<u>ToDo:</u> <b>Wenn keine QS Probleme aufgetreten sind, per Button \"Freigabe\" weitere Verarbeitung starten</b>");
             message.setText("2. Button >Import< for upload to Database");
 
-            TodoList.setItems("KPI_DB.xlsx hochladen", "QS checken", "Freigabe drücken");
-            TodoList.select("KPI_DB.xlsx hochladen");
+            TodoList.setItems("KPI_DB.xlsx hochgeladen", "QS bestätigen");
+            TodoList.select("KPI_DB.xlsx hochgeladen");
           //  TodoList.setEnabled(true);
 
             //h3_Fact.removeAll();
