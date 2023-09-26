@@ -463,48 +463,67 @@ public class Tech_KPIView extends VerticalLayout {
 
     private void saveActualsBlock(List<KPI_Actuals> batchData) {
 
-        String sql = "INSERT INTO [Stage_Tech_KPI].[KPI_Actuals] ([NT_ID],[WTAC_ID],[sort],[M2_Area],[M1_Network],[M3_Service],[M4_Dimension],[M5_Tech],[M6_Detail],[KPI_long],[Runrate],[Unit],[Description],[SourceReport],[SourceInput],[SourceComment] ,[SourceContact] ,[SourceLink] ) VALUES (?, ?, ?, ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        String sql = "INSERT INTO [Stage_Tech_KPI].[KPI_Actuals] (Zeile, [NT_ID],[WTAC_ID],[sort],[M2_Area],[M1_Network],[M3_Service],[M4_Dimension],[M5_Tech],[M6_Detail],[KPI_long],[Runrate],[Unit],[Description],[SourceReport],[SourceInput],[SourceComment] ,[SourceContact] ,[SourceLink] ) VALUES (?, ?, ?, ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
         jdbcTemplate.batchUpdate(sql, batchData, batchData.size(), (ps, entity) -> {
-            ps.setString(1, entity.getNT_ID());
-            ps.setString(2, entity.getWTAC_ID());
-            ps.setInt(3, entity.getSort());
-            ps.setString(4, entity.getM2_Area());
-            ps.setString(5, entity.getM1_Network());
-            ps.setString(6, entity.getM3_Service());
-            ps.setString(7, entity.getM4_Dimension());
-            ps.setString(8, entity.getM5_Tech());
-            ps.setString(9, entity.getM6_Detail());
-            ps.setString(10, entity.getKPI_long());
-            ps.setString(11, entity.getRunrate());
-            ps.setString(12, entity.getUnit());
-            ps.setString(13, entity.getDescription());
-            ps.setString(14, entity.getSourceReport());
-            ps.setString(15, entity.getSourceInput());
-            ps.setString(16, entity.getSourceComment());
-            ps.setString(17, entity.getSourceContact());
-            ps.setString(18, entity.getSourceLink());
+
+            Integer row=-1;
+            if(entity.getRow() != null)
+            {
+                row=entity.getRow();
+            }
+            else {
+                row=-1;
+            }
+
+            ps.setInt(1, entity.row);
+            ps.setString(2, entity.getNT_ID());
+            ps.setString(3, entity.getWTAC_ID());
+            ps.setInt(4, entity.getSort());
+            ps.setString(5, entity.getM2_Area());
+            ps.setString(6, entity.getM1_Network());
+            ps.setString(7, entity.getM3_Service());
+            ps.setString(8, entity.getM4_Dimension());
+            ps.setString(9, entity.getM5_Tech());
+            ps.setString(10, entity.getM6_Detail());
+            ps.setString(11, entity.getKPI_long());
+            ps.setString(12, entity.getRunrate());
+            ps.setString(13, entity.getUnit());
+            ps.setString(14, entity.getDescription());
+            ps.setString(15, entity.getSourceReport());
+            ps.setString(16, entity.getSourceInput());
+            ps.setString(17, entity.getSourceComment());
+            ps.setString(18, entity.getSourceContact());
+            ps.setString(19, entity.getSourceLink());
         });
 
     }
     private void savePlanBlock(List<KPI_Plan> batchData) {
 
-        String sql = "INSERT INTO [Stage_Tech_KPI].[KPI_Plan] (NT_ID, Spalte1, Scenario, VersionDate, VersionComment, Runrate) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO [Stage_Tech_KPI].[KPI_Plan] (Zeile, NT_ID, Spalte1, Scenario, VersionDate, VersionComment, Runrate) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         jdbcTemplate.batchUpdate(sql, batchData, batchData.size(), (ps, entity) -> {
 
             java.sql.Date versionDate = null;
+            Integer row=-1;
             if(entity.getVersionDate() != null)
             {
                 versionDate=new java.sql.Date(entity.getVersionDate().getTime());
             }
-
-            ps.setString(1, entity.getNT_ID());
-            ps.setString(2, entity.getSpalte1());
-            ps.setString(3, entity.getScenario());
-            ps.setDate(4, versionDate);
-            ps.setString(5, entity.getVersionComment());
-            ps.setString(6, entity.getRunrate());
+            if(entity.getRow() != null)
+            {
+                row=entity.getRow();
+            }
+            else {
+                row=-1;
+            }
+            ps.setInt(1,row);
+            ps.setString(2, entity.getNT_ID());
+            ps.setString(3, entity.getSpalte1());
+            ps.setString(4, entity.getScenario());
+            ps.setDate(5, versionDate);
+            ps.setString(6, entity.getVersionComment());
+            ps.setString(7, entity.getRunrate());
             //  ps.setDate(3, new java.sql.Date(2023,01,01));
             //ps.setDate(3, new java.sql.Date(entity.getDate().getTime() ));
             //ps.setDouble (4, entity.getWert());
@@ -513,14 +532,27 @@ public class Tech_KPIView extends VerticalLayout {
     }
     private void saveFactBlock(List<KPI_Fact> batchData) {
 
-        String sql = "INSERT INTO [Stage_Tech_KPI].[KPI_Fact] (NT_ID, Scenario,[Date],Wert) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO [Stage_Tech_KPI].[KPI_Fact] (Zeile, NT_ID, Runrate, Scenario,[Date],Wert) VALUES (?, ?, ?, ?, ?, ?)";
+
+
 
         jdbcTemplate.batchUpdate(sql, batchData, batchData.size(), (ps, entity) -> {
-                ps.setString(1, entity.getNT_ID());
-                ps.setString(2, entity.getScenario());
+            Integer row=-1;
+            if(entity.getRow() != null)
+            {
+                row=entity.getRow();
+            }
+            else {
+                row=-1;
+            }
+
+                ps.setInt(1, row);
+                ps.setString(2, entity.getNT_ID());
+                ps.setString(3, entity.getRunrate());
+                ps.setString(4, entity.getScenario());
                 //  ps.setDate(3, new java.sql.Date(2023,01,01));
-                ps.setDate(3, new java.sql.Date(entity.getDate().getTime() ));
-                ps.setDouble (4, entity.getWert());
+                ps.setDate(5, new java.sql.Date(entity.getDate().getTime() ));
+                ps.setDouble (6, entity.getWert());
             });
 
     }
@@ -562,6 +594,7 @@ public class Tech_KPIView extends VerticalLayout {
 
         gridFact.addColumn(KPI_Fact::getNT_ID).setHeader("NT ID");
         gridFact.addColumn(KPI_Fact::getScenario).setHeader("Scenario");
+        gridFact.addColumn(KPI_Fact::getRunrate).setHeader("Runrate");
         gridFact.addColumn(KPI_Fact::getDate).setHeader("Date");
         gridFact.addColumn(KPI_Fact::getWert).setHeader("Wert");
 
@@ -708,6 +741,21 @@ public class Tech_KPIView extends VerticalLayout {
 
                     if(cell.getColumnIndex()==1)
                     {
+                        String ColumnName="Runrate";
+                        try {
+                            kPI_Fact.setRunrate(checkCellString(sheetName, cell, RowNumber,ColumnName));
+                        }
+                        catch(Exception e)
+                        {
+                            article=new Article();
+                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
+                            textArea.add(article);
+                            Error_count++;
+
+                        }
+                    }
+                    if(cell.getColumnIndex()==2)
+                    {
                         String ColumnName="Scenario";
                         try {
                             kPI_Fact.setScenario(checkCellString(sheetName, cell, RowNumber,ColumnName));
@@ -722,7 +770,7 @@ public class Tech_KPIView extends VerticalLayout {
                         }
                     }
 
-                    if(cell.getColumnIndex()==2)
+                    if(cell.getColumnIndex()==3)
                     {
                         String ColumnName="Date";
                         try {
@@ -738,7 +786,7 @@ public class Tech_KPIView extends VerticalLayout {
                         }
                     }
 
-                    if(cell.getColumnIndex()==3)
+                    if(cell.getColumnIndex()==4)
                     {
                         String ColumnName="Wert";
                         try {
@@ -1482,6 +1530,7 @@ public class Tech_KPIView extends VerticalLayout {
         private String NT_ID ;
 
         private String Scenario = "";
+        private String Runrate = "";
 
         private Date Date;
 
@@ -1526,6 +1575,14 @@ public class Tech_KPIView extends VerticalLayout {
 
         public void setWert(Double wert) {
             Wert = wert;
+        }
+
+        public String getRunrate() {
+            return Runrate;
+        }
+
+        public void setRunrate(String runrate) {
+            Runrate = runrate;
         }
     }
 
