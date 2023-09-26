@@ -22,6 +22,7 @@ import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.converter.StringToIntegerConverter;
 import com.vaadin.flow.data.provider.AbstractBackEndDataProvider;
+import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.data.provider.SortDirection;
 import com.vaadin.flow.router.PageTitle;
@@ -36,8 +37,12 @@ import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.util.Comparator.naturalOrder;
 
 
 @Route(value="InputPBIComments", layout = MainLayout.class)
@@ -132,6 +137,7 @@ public class InputPBIComments extends VerticalLayout {
 //
             FinancialsDataProvider dataProvider = new FinancialsDataProvider(listOfFinancials);
             crudFinancials.setDataProvider(dataProvider);
+            setupDataProviderEvent();
 
             singleFileUpload.clearFileList();
             crudFinancials.setHeight("600px");
@@ -184,6 +190,10 @@ public class InputPBIComments extends VerticalLayout {
                 , gridFinancials.getColumnByKey(CATEGORY)
                 , gridFinancials.getColumnByKey(XTD)
                 , gridFinancials.getColumnByKey(EDIT_COLUMN));
+
+        gridFinancials.addItemDoubleClickListener(e->{
+            System.out.println("Zeile: " + e.getItem().getRow());
+        });
 
 
     }
@@ -556,6 +566,30 @@ public class InputPBIComments extends VerticalLayout {
 
     }
 
+    private void setupDataProviderEvent() {
+        FinancialsDataProvider dataProvider = new FinancialsDataProvider(getDataProviderAllItems());
+
+        article=new Article();
+        article.setText(LocalDateTime.now().format(formatter) + ": Info: Download from Database");
+        textArea.add(article);
+
+        crudFinancials.addDeleteListener(
+                deleteEvent -> {dataProvider.delete(deleteEvent.getItem());
+                    crudFinancials.setDataProvider(dataProvider);
+                });
+        crudFinancials.addSaveListener(
+                saveEvent -> {
+                    dataProvider.persist(saveEvent.getItem());
+                    crudFinancials.setDataProvider(dataProvider);
+                });
+    }
+
+    private List<Financials> getDataProviderAllItems() {
+        DataProvider<Financials, Void> existDataProvider = (DataProvider<Financials, Void>) gridFinancials.getDataProvider();
+        List<Financials> listOfFinancials = existDataProvider.fetch(new Query<>()).collect(Collectors.toList());
+        return listOfFinancials;
+    }
+
 
     public class Financials {
 
@@ -623,6 +657,8 @@ public class InputPBIComments extends VerticalLayout {
 
     public class FinancialsDataProvider  extends AbstractBackEndDataProvider<Financials, CrudFilter> {
         final List<Financials> DATABASE;
+
+        private Consumer<Long> sizeChangeListener;
         public FinancialsDataProvider(List<Financials> listOfFinancials) {
             this.DATABASE = listOfFinancials;
         }
@@ -689,8 +725,43 @@ public class InputPBIComments extends VerticalLayout {
 
         @Override
         protected int sizeInBackEnd(Query<Financials, CrudFilter> query) {
-            return 0;
+            // For RDBMS just execute a SELECT COUNT(*) ... WHERE query
+            long count = fetchFromBackEnd(query).count();
+
+            if (sizeChangeListener != null) {
+                sizeChangeListener.accept(count);
+            }
+
+            return (int) count;
         }
+
+        public void persist(Financials item) {
+
+            if (item.getRow() == null) {
+                item.setRow(DATABASE.stream().map(Financials::getRow).max(naturalOrder())
+                        .orElse(0) + 1);
+            }
+
+            final Optional<Financials> existingItem = find(item.getRow());
+            if (existingItem.isPresent()) {
+                int position = DATABASE.indexOf(existingItem.get());
+                DATABASE.remove(existingItem.get());
+                DATABASE.add(position, item);
+            } else {
+                DATABASE.add(item);
+            }
+        }
+
+        Optional<Financials> find(Integer id) {
+            return DATABASE.stream().filter(entity -> entity.getRow().equals(id))
+                    .findFirst();
+        }
+
+        public void delete(Financials item) {
+            DATABASE.removeIf(entity -> entity.getRow().equals(item.getRow()));
+        }
+
+
     }
 
 
