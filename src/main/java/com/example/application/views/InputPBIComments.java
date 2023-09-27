@@ -98,21 +98,21 @@ public class InputPBIComments extends VerticalLayout {
 
         IntegerField zeile = new IntegerField  ("Zeile");
         IntegerField month = new IntegerField ("Month");
-        TextField Category = new TextField("Category");
-        TextField Comment = new TextField("Comment");
-        TextField Scenario = new TextField("Scenario");
+        TextField category = new TextField("Category");
+        TextField comment = new TextField("Comment");
+        TextField scenario = new TextField("Scenario");
         TextField xtd = new TextField("XTD");
 
-        FormLayout editForm = new FormLayout(zeile, month, Category, Comment, Scenario, xtd);
+        FormLayout editForm = new FormLayout(zeile, month, category, comment, scenario, xtd);
 
         Binder<Financials> binder = new Binder<>(Financials.class);
         //binder.forField(month).withNullRepresentation("202301"").withConverter(new StringToIntegerConverter("Not a Number")).asRequired().bind(Financials::setMonth, Financials::setMonth);
         //  binder.forField(monat_ID).asRequired().bind(CLTV_HW_Measures::getMonat_ID, CLTV_HW_Measures::setMonat_ID);
         binder.forField(month).asRequired().bind(Financials::getMonth, Financials::setMonth);
-        binder.forField(Category).asRequired().bind(Financials::getCategory, Financials::setCategory);
-        binder.forField(Comment).asRequired().bind(Financials::getComment, Financials::setComment);
-        binder.forField(Scenario).asRequired().bind(Financials::getScenario, Financials::setScenario);
-        binder.forField(xtd).asRequired().bind(Financials::getXTD, Financials::setXTD);
+        binder.forField(category).asRequired().bind(Financials::getCategory, Financials::setCategory);
+        binder.forField(comment).asRequired().bind(Financials::getComment, Financials::setComment);
+        binder.forField(scenario).asRequired().bind(Financials::getScenario, Financials::setScenario);
+        binder.forField(xtd).asRequired().bind(Financials::getXtd, Financials::setXtd);
         binder.forField(zeile).asRequired().bind(Financials::getRow, Financials::setRow);
 
         return new BinderCrudEditor<>(binder, editForm);
@@ -174,7 +174,7 @@ public class InputPBIComments extends VerticalLayout {
 
         String CATEGORY = "category";
 
-        String XTD = "XTD";
+        String XTD = "xtd";
 
         String EDIT_COLUMN = "vaadin-crud-edit-column";
 
@@ -323,7 +323,7 @@ public class InputPBIComments extends VerticalLayout {
                     {
                         String ColumnName="XTD";
                         try {
-                            financials.setXTD(checkCellString(sheetName, cell, RowNumber,ColumnName));
+                            financials.setXtd(checkCellString(sheetName, cell, RowNumber,ColumnName));
                         }
                         catch(Exception e)
                         {
@@ -595,15 +595,15 @@ public class InputPBIComments extends VerticalLayout {
 
         private Integer row;
 
-        private Integer Month;
+        private Integer month;
 
-        private String Category;
+        private String category;
 
-        private String Comment;
+        private String comment;
 
-        private String Scenario;
+        private String scenario;
 
-        private String XTD;
+        private String xtd;
 
         public Integer getRow() {
             return row;
@@ -614,43 +614,43 @@ public class InputPBIComments extends VerticalLayout {
         }
 
         public Integer getMonth() {
-            return Month;
+            return month;
         }
 
         public void setMonth(Integer month) {
-            Month = month;
+            this.month = month;
         }
 
         public String getCategory() {
-            return Category;
+            return category;
         }
 
         public void setCategory(String category) {
-            Category = category;
+            this.category = category;
         }
 
         public String getComment() {
-            return Comment;
+            return comment;
         }
 
         public void setComment(String comment) {
-            Comment = comment;
+            this.comment = comment;
         }
 
         public String getScenario() {
-            return Scenario;
+            return scenario;
         }
 
         public void setScenario(String scenario) {
-            Scenario = scenario;
+            this.scenario = scenario;
         }
 
-        public String getXTD() {
-            return XTD;
+        public String getXtd() {
+            return xtd;
         }
 
-        public void setXTD(String XTD) {
-            this.XTD = XTD;
+        public void setXtd(String xtd) {
+            this.xtd = xtd;
         }
     }
 
@@ -680,9 +680,9 @@ public class InputPBIComments extends VerticalLayout {
         private static Predicate<Financials> predicate(CrudFilter filter) {
             // For RDBMS just generate a WHERE clause
             return filter.getConstraints().entrySet().stream()
-                    .map(constraint -> (Predicate<Financials>) person -> {
+                    .map(constraint -> (Predicate<Financials>) financials -> {
                         try {
-                            Object value = valueOf(constraint.getKey(), person);
+                            Object value = valueOf(constraint.getKey(), financials);
                             return value != null && value.toString().toLowerCase()
                                     .contains(constraint.getValue().toLowerCase());
                         } catch (Exception e) {
@@ -692,11 +692,11 @@ public class InputPBIComments extends VerticalLayout {
                     }).reduce(Predicate::and).orElse(e -> true);
         }
 
-        private static Object valueOf(String fieldName, Financials person) {
+        private static Object valueOf(String fieldName, Financials financials) {
             try {
-                Field field = CLTV_HW_Measures.class.getDeclaredField(fieldName);
+                Field field = Financials.class.getDeclaredField(fieldName);
                 field.setAccessible(true);
-                return field.get(person);
+                return field.get(financials);
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
