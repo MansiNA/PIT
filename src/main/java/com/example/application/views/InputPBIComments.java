@@ -337,8 +337,11 @@ public class InputPBIComments extends VerticalLayout {
 
                 }
 
-                listOfFinancials.add(financials);
-                System.out.println(listOfFinancials.size()+".............parse");
+                if(RowNumber != 1) {
+                    listOfFinancials.add(financials);
+                    System.out.println(listOfFinancials.size()+".............parse");
+                }
+
 
             }
 
@@ -576,6 +579,7 @@ public class InputPBIComments extends VerticalLayout {
         crudFinancials.addDeleteListener(
                 deleteEvent -> {dataProvider.delete(deleteEvent.getItem());
                     crudFinancials.setDataProvider(dataProvider);
+
                 });
         crudFinancials.addSaveListener(
                 saveEvent -> {
@@ -760,7 +764,6 @@ public class InputPBIComments extends VerticalLayout {
         public void delete(Financials item) {
             DATABASE.removeIf(entity -> entity.getRow().equals(item.getRow()));
         }
-
 
     }
 
