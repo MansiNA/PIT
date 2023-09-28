@@ -2,6 +2,7 @@ package com.example.application.views;
 
 import com.example.application.data.entity.CLTV_HW_Measures;
 import com.example.application.data.entity.CLTV_HW_MeasuresDataProvider;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.accordion.AccordionPanel;
 import com.vaadin.flow.component.button.Button;
@@ -13,18 +14,17 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Article;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.converter.StringToIntegerConverter;
-import com.vaadin.flow.data.provider.AbstractBackEndDataProvider;
-import com.vaadin.flow.data.provider.DataProvider;
-import com.vaadin.flow.data.provider.Query;
-import com.vaadin.flow.data.provider.SortDirection;
+import com.vaadin.flow.data.provider.*;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import org.apache.poi.ss.usermodel.Cell;
@@ -63,6 +63,9 @@ public class InputPBIComments extends VerticalLayout {
     long contentLength = 0;
     String mimeType = "";
     private List<Financials> listOfFinancials = new ArrayList<Financials>();
+    private List<Subscriber> listOfSubscriber = new ArrayList<Subscriber>();
+    private List<UnitsDeepDive> listOfUnitsDeepDive = new ArrayList<UnitsDeepDive>();
+
     private Crud<Financials> crudFinancials;
     Grid<Financials> gridFinancials = new Grid<>(Financials.class);
 
@@ -84,14 +87,44 @@ public class InputPBIComments extends VerticalLayout {
 
         setupUploader();
 
-        crudFinancials = new Crud<>(Financials.class, createEditor());
-        setupFinancialsGrid();
+      //  crudFinancials = new Crud<>(Financials.class, createEditor());
+     //   setupFinancialsGrid();
 
         //crudFinancials.setHeight("600px");
 
         //crudFinancials.setDataProvider();
 
-        add(crudFinancials);
+       // add(crudFinancials);
+        VerticalLayout vl = new VerticalLayout();
+        Article text = new Article();
+        text.add("Hier möglichst noch den jeweils ausgewählten Projekt-Namen mit Pfad ausgeben...(breadcrump like)");
+        vl.add(text,getTabsheet());
+
+        vl.setHeightFull();
+        vl.setSizeFull();
+
+        add(vl);
+    }
+
+    private TabSheet getTabsheet() {
+        System.out.println("tabsheet..........");
+        TabSheet tabSheet = new TabSheet();
+
+       tabSheet.add("CommentsFinancials", getFinancialsGrid());
+       tabSheet.add("CommentsSubscriber", new H1("welcome"));
+       tabSheet.add("CommentsUnitsDeepDive", new H1("Hello"));
+
+        tabSheet.setSizeFull();
+        tabSheet.setHeightFull();
+        return tabSheet;
+    }
+
+    private Component getFinancialsGrid() {
+        VerticalLayout content = new VerticalLayout();
+        crudFinancials = new Crud<>(Financials.class, createEditor());
+        setupFinancialsGrid();
+        content.add(crudFinancials);
+        return content;
     }
 
     private CrudEditor<Financials> createEditor() {
@@ -125,17 +158,19 @@ public class InputPBIComments extends VerticalLayout {
         singleFileUpload.addSucceededListener(event -> {
             // Get information about the uploaded file
             fileData_Financials = memoryBuffer.getInputStream();
-            fileData_Subscriber = memoryBuffer.getInputStream();
-            fileData_UnitsDeepDive = memoryBuffer.getInputStream();
             fileName = event.getFileName();
             contentLength = event.getContentLength();
             mimeType = event.getMIMEType();
 
-            listOfFinancials = parseExcelFile_Financials(fileData_Financials, fileName,"Comments Financials");
-//            listOfSubscriber = parseExcelFile_Subscriber(fileData_Subscriber, fileName,"Comments Subscriber");
+            listOfFinancials = parseExcelFile(fileData_Financials, fileName,"Comments Financials", Financials.class);
+            listOfSubscriber = parseExcelFile(fileData_Financials, fileName,"Comments Subscriber", Subscriber.class);
+             listOfUnitsDeepDive = parseExcelFile(fileData_Financials, fileName,"Comments Units Deep Dive", UnitsDeepDive.class);
+            //listOfFinancials = parseExcelFile_Financials(fileData_Financials, fileName,"Comments Financials");
+   //         listOfSubscriber = parseExcelFile_Subscriber(fileData_Subscriber, fileName,"Comments Subscriber");
 //            listOfUnitsDeepDive = parseExcelFile_UnitsDeepDive(fileData_UnitsDeepDive, fileName, "Comments Units Deep Dive");
-//
-            FinancialsDataProvider dataProvider = new FinancialsDataProvider(listOfFinancials);
+      //      System.out.println(listOfSubscriber.get(listOfSubscriber.size()-1).getSegment());
+        //    FinancialsDataProvider dataProvider = new FinancialsDataProvider(listOfFinancials);
+            GenericDataProvider dataProvider = new GenericDataProvider(listOfFinancials);
             crudFinancials.setDataProvider(dataProvider);
             setupDataProviderEvent();
 
@@ -147,21 +182,6 @@ public class InputPBIComments extends VerticalLayout {
     }
 
     private void setupFinancialsGrid() {
-
-        /*
-        gridFinancials = new Grid<>(Financials.class, false);
-
-        gridFinancials.setHeight("300px");
-
-        gridFinancials.addColumn(Financials::getRow).setHeader("Zeile");
-        gridFinancials.addColumn(Financials::getMonth).setHeader("Month");
-        gridFinancials.addColumn(Financials::getCategory).setHeader("Category");
-        gridFinancials.addColumn(Financials::getComment).setHeader("Comment");
-        gridFinancials.addColumn(Financials::getScenario).setHeader("Scenario");
-        gridFinancials.addColumn(Financials::getXTD).setHeader("XTD");
-
-
-         */
 
 
         String ZEILE = "row";
@@ -197,6 +217,81 @@ public class InputPBIComments extends VerticalLayout {
 
 
     }
+
+    public <T> List<T>  parseExcelFile(InputStream fileData, String fileName, String sheetName, Class<T> targetType) {
+
+
+        List<T> resultList = new ArrayList<>();
+        try {
+            if(fileName.isEmpty() || fileName.length()==0)
+            {
+                article=new Article();
+                article.setText(LocalDateTime.now().format(formatter) + ": Error: Keine Datei angegeben!");
+                textArea.add(article);
+            }
+
+            if(!mimeType.contains("openxmlformats-officedocument"))
+            {
+                article=new Article();
+                article.setText(LocalDateTime.now().format(formatter) + ": Error: ungültiges Dateiformat!");
+                textArea.add(article);
+            }
+            System.out.println(sheetName+"...........");
+            //System.out.println("Excel import: "+  fileName + " => Mime-Type: " + mimeType  + " Größe " + contentLength + " Byte");
+            textArea.setText(LocalDateTime.now().format(formatter) + ": Info: Verarbeite Datei: " + fileName + " (" + contentLength + " Byte)");
+
+            XSSFWorkbook my_xls_workbook = new XSSFWorkbook(fileData);
+            XSSFSheet my_worksheet = my_xls_workbook.getSheet(sheetName);
+            Iterator<Row> rowIterator = my_worksheet.iterator();
+
+            int RowNumber=0;
+            Integer Error_count=0;
+
+            while (rowIterator.hasNext()) {
+                Row row = rowIterator.next();
+                T entity = targetType.newInstance();
+                RowNumber++;
+
+                if (RowNumber == 1) {
+                    continue;
+                }
+
+               // System.out.println(row.getLastCellNum()+" ___________________________"+row.toString());
+                Field[] fields = targetType.getDeclaredFields();
+                for (int index = 0; index < (fields.length -1); index++) {
+
+                    Field field = fields[index];
+                    if( index == 0) {
+                        field.set(entity, RowNumber);
+                    }
+
+                    field = fields[index+1];
+                    field.setAccessible(true);
+                    Cell cell = row.getCell(index);
+                  //  System.out.println(cell + " ......."+field.getType() + "---"+field.getName());
+
+                    if (cell != null) {
+                        if (field.getType() == int.class || field.getType() == Integer.class) {
+                            field.set(entity, (int) cell.getNumericCellValue());
+                        } else if (field.getType() == double.class || field.getType() == Double.class) {
+                            field.set(entity, cell.getNumericCellValue());
+                        } else if (field.getType() == String.class) {
+                            field.set(entity, cell.getStringCellValue());
+                        }
+                    }
+                }
+
+                resultList.add(entity);
+            }
+            System.out.println(resultList.get(0).toString()+"list...."+resultList.size());
+            return resultList;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+
+    }
+
     public List<Financials> parseExcelFile_Financials(InputStream fileData, String fileName, String sheetName) {
 
 
@@ -570,7 +665,8 @@ public class InputPBIComments extends VerticalLayout {
     }
 
     private void setupDataProviderEvent() {
-        FinancialsDataProvider dataProvider = new FinancialsDataProvider(getDataProviderAllItems());
+    //    FinancialsDataProvider dataProvider = new FinancialsDataProvider(getDataProviderAllItems());
+        GenericDataProvider dataProvider = new GenericDataProvider(getDataProviderAllItems());
 
         article=new Article();
         article.setText(LocalDateTime.now().format(formatter) + ": Info: Download from Database");
@@ -595,7 +691,132 @@ public class InputPBIComments extends VerticalLayout {
     }
 
 
-    public class Financials {
+    public static class Subscriber {
+
+        public Subscriber() {
+        }
+
+        private Integer row;
+
+        private Integer month;
+
+        private String category;
+
+        private String comment;
+
+        private String paymentType;
+
+        private String segment;
+
+        public Integer getRow() {
+            return row;
+        }
+
+        public void setRow(Integer row) {
+            this.row = row;
+        }
+
+        public Integer getMonth() {
+            return month;
+        }
+
+        public void setMonth(Integer month) {
+            this.month = month;
+        }
+
+        public String getCategory() {
+            return category;
+        }
+
+        public void setCategory(String category) {
+            this.category = category;
+        }
+
+        public String getComment() {
+            return comment;
+        }
+
+        public void setComment(String comment) {
+            this.comment = comment;
+        }
+
+        public String getPaymentType() {
+            return paymentType;
+        }
+
+        public void setPaymentType(String paymentType) {
+            this.paymentType = paymentType;
+        }
+
+        public String getSegment() {
+            return segment;
+        }
+
+        public void setSegment(String segment) {
+            this.segment = segment;
+        }
+    }
+
+    public static class UnitsDeepDive {
+
+        public UnitsDeepDive() {
+        }
+
+        private Integer row;
+
+        private Integer month;
+
+        private String category;
+
+        private String comment;
+
+        private String segment;
+
+        public Integer getRow() {
+            return row;
+        }
+
+        public void setRow(Integer row) {
+            this.row = row;
+        }
+
+        public Integer getMonth() {
+            return month;
+        }
+
+        public void setMonth(Integer month) {
+            this.month = month;
+        }
+
+        public String getCategory() {
+            return category;
+        }
+
+        public void setCategory(String category) {
+            this.category = category;
+        }
+
+        public String getComment() {
+            return comment;
+        }
+
+        public void setComment(String comment) {
+            this.comment = comment;
+        }
+
+        public String getSegment() {
+            return segment;
+        }
+
+        public void setSegment(String segment) {
+            this.segment = segment;
+        }
+    }
+
+    public static class Financials {
+
+        public Financials() {
+        }
 
         private Integer row;
 
@@ -657,6 +878,155 @@ public class InputPBIComments extends VerticalLayout {
             this.xtd = xtd;
         }
     }
+
+    public class GenericDataProvider<T> extends AbstractBackEndDataProvider<T, CrudFilter> {
+
+        private final List<T> DATABASE;
+        private Consumer<Long> sizeChangeListener;
+
+        public GenericDataProvider(List<T> data) {
+            this.DATABASE = data;
+        }
+
+        public void setSizeChangeListener(Consumer<Long> sizeChangeListener) {
+            this.sizeChangeListener = sizeChangeListener;
+        }
+
+        @Override
+        protected Stream<T> fetchFromBackEnd(Query<T, CrudFilter> query) {
+            int offset = query.getOffset();
+            int limit = query.getLimit();
+
+            Stream<T> stream = DATABASE.stream();
+
+            if (query.getFilter().isPresent()) {
+                stream = stream.filter(predicate(query.getFilter().get()))
+                        .sorted(comparator(query.getFilter().get()));
+            }
+
+            return stream.skip(offset).limit(limit);
+        }
+
+        private Predicate<T> predicate(CrudFilter filter) {
+            return filter.getConstraints().entrySet().stream()
+                    .map(constraint -> (Predicate<T>) entity -> {
+                        try {
+                            Object value = valueOf(constraint.getKey(), entity);
+                            return value != null && value.toString().toLowerCase()
+                                    .contains(constraint.getValue().toLowerCase());
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            return false;
+                        }
+                    }).reduce(Predicate::and).orElse(entity -> true);
+        }
+
+        private Object valueOf(String fieldName, T entity) {
+            try {
+                Field field = entity.getClass().getDeclaredField(fieldName);
+                field.setAccessible(true);
+                return field.get(entity);
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+        private Comparator<T> comparator(CrudFilter filter) {
+            return filter.getSortOrders().entrySet().stream().map(sortClause -> {
+                try {
+                    Comparator<T> comparator = Comparator.comparing(
+                            entity -> (Comparable) valueOf(sortClause.getKey(),
+                                    entity));
+
+                    if (sortClause.getValue() == SortDirection.DESCENDING) {
+                        comparator = comparator.reversed();
+                    }
+
+                    return comparator;
+
+                } catch (Exception ex) {
+                    return (Comparator<T>) (o1, o2) -> 0;
+                }
+            }).reduce(Comparator::thenComparing).orElse((o1, o2) -> 0);
+        }
+
+        @Override
+        protected int sizeInBackEnd(Query<T, CrudFilter> query) {
+            long count = fetchFromBackEnd(query).count();
+
+            if (sizeChangeListener != null) {
+                sizeChangeListener.accept(count);
+            }
+
+            return (int) count;
+        }
+        public void persist(T item) {
+            try {
+                Field field = item.getClass().getDeclaredField("row");
+                field.setAccessible(true);
+                Integer row = (Integer) field.get(item);
+
+                if (row == null) {
+                    row = DATABASE.stream().map(entity -> {
+                        try {
+                            Field entityField = entity.getClass().getDeclaredField("row");
+                            entityField.setAccessible(true);
+                            return (Integer) entityField.get(entity);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            return 0;
+                        }
+                    }).max(Comparator.naturalOrder()).orElse(0) + 1;
+                    field.set(item, row);
+                }
+
+                Optional<T> existingItem = find(row);
+                if (existingItem.isPresent()) {
+                    int position = DATABASE.indexOf(existingItem.get());
+                    DATABASE.remove(existingItem.get());
+                    DATABASE.add(position, item);
+                } else {
+                    DATABASE.add(item);
+                }
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+        public Optional<T> find(Integer id) {
+            return DATABASE.stream().filter(entity -> {
+                try {
+                    Field field = entity.getClass().getDeclaredField("row");
+                    field.setAccessible(true);
+                    return field.get(entity).equals(id);
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                }
+            }).findFirst();
+        }
+
+        public void delete(T item) {
+            try {
+                Field field = item.getClass().getDeclaredField("row");
+                field.setAccessible(true);
+                Integer row = (Integer) field.get(item);
+
+                DATABASE.removeIf(entity -> {
+                    try {
+                        Field entityField = entity.getClass().getDeclaredField("row");
+                        entityField.setAccessible(true);
+                        return entityField.get(entity).equals(row);
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    }
+                });
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+    }
+
 
 
     public class FinancialsDataProvider  extends AbstractBackEndDataProvider<Financials, CrudFilter> {
@@ -766,6 +1136,8 @@ public class InputPBIComments extends VerticalLayout {
         }
 
     }
+
+
 
 
 }
