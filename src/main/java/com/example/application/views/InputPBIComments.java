@@ -3,6 +3,7 @@ package com.example.application.views;
 import com.example.application.data.entity.CLTV_HW_Measures;
 import com.example.application.data.entity.CLTV_HW_MeasuresDataProvider;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.accordion.AccordionPanel;
 import com.vaadin.flow.component.button.Button;
@@ -56,9 +57,7 @@ public class InputPBIComments extends VerticalLayout {
     Article article = new Article();
     Div textArea = new Div();
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
-    InputStream fileData_Financials;
-    InputStream fileData_Subscriber;
-    InputStream fileData_UnitsDeepDive;
+    InputStream fileData;
     String fileName = "";
     long contentLength = 0;
     String mimeType = "";
@@ -67,7 +66,11 @@ public class InputPBIComments extends VerticalLayout {
     private List<UnitsDeepDive> listOfUnitsDeepDive = new ArrayList<UnitsDeepDive>();
 
     private Crud<Financials> crudFinancials;
-    Grid<Financials> gridFinancials = new Grid<>(Financials.class);
+    private Grid<Financials> gridFinancials = new Grid<>(Financials.class);
+    private Crud<Subscriber> crudSubscriber;
+    private Grid<Subscriber> gridSubscriber = new Grid<>(Subscriber.class);
+    private Crud<UnitsDeepDive> crudUnitsDeepDive;
+    private Grid<UnitsDeepDive> gridUnitsDeepDive = new Grid<>(UnitsDeepDive.class);
 
     public InputPBIComments() {
 
@@ -84,35 +87,17 @@ public class InputPBIComments extends VerticalLayout {
         add(hl);
         add(textArea);
 
-
         setupUploader();
 
-      //  crudFinancials = new Crud<>(Financials.class, createEditor());
-     //   setupFinancialsGrid();
-
-        //crudFinancials.setHeight("600px");
-
-        //crudFinancials.setDataProvider();
-
-       // add(crudFinancials);
-        VerticalLayout vl = new VerticalLayout();
-        Article text = new Article();
-        text.add("Hier möglichst noch den jeweils ausgewählten Projekt-Namen mit Pfad ausgeben...(breadcrump like)");
-        vl.add(text,getTabsheet());
-
-        vl.setHeightFull();
-        vl.setSizeFull();
-
-        add(vl);
+        add(getTabsheet());
     }
 
     private TabSheet getTabsheet() {
-        System.out.println("tabsheet..........");
         TabSheet tabSheet = new TabSheet();
 
        tabSheet.add("CommentsFinancials", getFinancialsGrid());
-       tabSheet.add("CommentsSubscriber", new H1("welcome"));
-       tabSheet.add("CommentsUnitsDeepDive", new H1("Hello"));
+       tabSheet.add("CommentsSubscriber", getSubscriberGrid());
+       tabSheet.add("CommentsUnitsDeepDive", getUnitsDeepDiveGrid());
 
         tabSheet.setSizeFull();
         tabSheet.setHeightFull();
@@ -121,13 +106,29 @@ public class InputPBIComments extends VerticalLayout {
 
     private Component getFinancialsGrid() {
         VerticalLayout content = new VerticalLayout();
-        crudFinancials = new Crud<>(Financials.class, createEditor());
+        crudFinancials = new Crud<>(Financials.class, createFinancialsEditor());
         setupFinancialsGrid();
         content.add(crudFinancials);
         return content;
     }
 
-    private CrudEditor<Financials> createEditor() {
+    private Component getSubscriberGrid() {
+        VerticalLayout content = new VerticalLayout();
+        crudSubscriber = new Crud<>(Subscriber.class, createSubscriberEditor());
+        setupSubscriberGrid();
+        content.add(crudSubscriber);
+        return content;
+    }
+
+    private Component getUnitsDeepDiveGrid() {
+        VerticalLayout content = new VerticalLayout();
+        crudUnitsDeepDive = new Crud<>(UnitsDeepDive.class, createUnitsDeepDiveEditor());
+        setupUnitsDeepDiveGrid();
+        content.add(crudUnitsDeepDive);
+        return content;
+    }
+
+    private CrudEditor<Financials> createFinancialsEditor() {
 
         IntegerField zeile = new IntegerField  ("Zeile");
         IntegerField month = new IntegerField ("Month");
@@ -151,38 +152,108 @@ public class InputPBIComments extends VerticalLayout {
         return new BinderCrudEditor<>(binder, editForm);
     }
 
+    private CrudEditor<Subscriber> createSubscriberEditor() {
+
+        IntegerField zeile = new IntegerField  ("Zeile");
+        IntegerField month = new IntegerField ("Month");
+        TextField category = new TextField("Category");
+        TextField comment = new TextField("Comment");
+        TextField paymentType = new TextField("Payment Type");
+        TextField segment = new TextField("Segment");
+
+        FormLayout editForm = new FormLayout(zeile, month, category, comment, paymentType, segment);
+
+        Binder<Subscriber> binder = new Binder<>(Subscriber.class);
+        binder.forField(month).asRequired().bind(Subscriber::getMonth, Subscriber::setMonth);
+        binder.forField(category).asRequired().bind(Subscriber::getCategory, Subscriber::setCategory);
+        binder.forField(comment).asRequired().bind(Subscriber::getComment, Subscriber::setComment);
+        binder.forField(paymentType).asRequired().bind(Subscriber::getPaymentType, Subscriber::setPaymentType);
+        binder.forField(segment).asRequired().bind(Subscriber::getSegment, Subscriber::setSegment);
+        binder.forField(zeile).asRequired().bind(Subscriber::getRow, Subscriber::setRow);
+
+        return new BinderCrudEditor<>(binder, editForm);
+    }
+
+    private CrudEditor<UnitsDeepDive> createUnitsDeepDiveEditor() {
+
+        IntegerField zeile = new IntegerField  ("Zeile");
+        IntegerField month = new IntegerField ("Month");
+        TextField category = new TextField("Category");
+        TextField comment = new TextField("Comment");
+        TextField segment = new TextField("Segment");
+
+        FormLayout editForm = new FormLayout(zeile, month, category, comment, segment);
+
+        Binder<UnitsDeepDive> binder = new Binder<>(UnitsDeepDive.class);
+        binder.forField(month).asRequired().bind(UnitsDeepDive::getMonth, UnitsDeepDive::setMonth);
+        binder.forField(category).asRequired().bind(UnitsDeepDive::getCategory, UnitsDeepDive::setCategory);
+        binder.forField(comment).asRequired().bind(UnitsDeepDive::getComment, UnitsDeepDive::setComment);
+        binder.forField(segment).asRequired().bind(UnitsDeepDive::getSegment, UnitsDeepDive::setSegment);
+        binder.forField(zeile).asRequired().bind(UnitsDeepDive::getRow, UnitsDeepDive::setRow);
+
+        return new BinderCrudEditor<>(binder, editForm);
+    }
+
     private void setupUploader() {
-        System.out.println("setup uploader................start");
         singleFileUpload.setWidth("600px");
 
         singleFileUpload.addSucceededListener(event -> {
             // Get information about the uploaded file
-            fileData_Financials = memoryBuffer.getInputStream();
+            fileData = memoryBuffer.getInputStream();
             fileName = event.getFileName();
             contentLength = event.getContentLength();
             mimeType = event.getMIMEType();
 
-            listOfFinancials = parseExcelFile(fileData_Financials, fileName,"Comments Financials", Financials.class);
-            listOfSubscriber = parseExcelFile(fileData_Financials, fileName,"Comments Subscriber", Subscriber.class);
-             listOfUnitsDeepDive = parseExcelFile(fileData_Financials, fileName,"Comments Units Deep Dive", UnitsDeepDive.class);
-            //listOfFinancials = parseExcelFile_Financials(fileData_Financials, fileName,"Comments Financials");
-   //         listOfSubscriber = parseExcelFile_Subscriber(fileData_Subscriber, fileName,"Comments Subscriber");
-//            listOfUnitsDeepDive = parseExcelFile_UnitsDeepDive(fileData_UnitsDeepDive, fileName, "Comments Units Deep Dive");
-      //      System.out.println(listOfSubscriber.get(listOfSubscriber.size()-1).getSegment());
-        //    FinancialsDataProvider dataProvider = new FinancialsDataProvider(listOfFinancials);
-            GenericDataProvider dataProvider = new GenericDataProvider(listOfFinancials);
-            crudFinancials.setDataProvider(dataProvider);
+            parseExcelFile(fileData,fileName);
+            GenericDataProvider dataFinancialsProvider = new GenericDataProvider(listOfFinancials);
+            crudFinancials.setDataProvider(dataFinancialsProvider);
+            GenericDataProvider dataSubscriberProvider = new GenericDataProvider(listOfSubscriber);
+            crudSubscriber.setDataProvider(dataSubscriberProvider);
+            GenericDataProvider dataUnitsDeepDiveProvider = new GenericDataProvider(listOfUnitsDeepDive);
+            crudUnitsDeepDive.setDataProvider(dataUnitsDeepDiveProvider);
             setupDataProviderEvent();
 
             singleFileUpload.clearFileList();
             crudFinancials.setHeight("600px");
-
         });
         System.out.println("setup uploader................over");
     }
 
-    private void setupFinancialsGrid() {
+    private void parseExcelFile(InputStream fileData, String fileName) {
 
+        try {
+            if(fileName.isEmpty() || fileName.length()==0)
+            {
+                article=new Article();
+                article.setText(LocalDateTime.now().format(formatter) + ": Error: Keine Datei angegeben!");
+                textArea.add(article);
+            }
+
+            if(!mimeType.contains("openxmlformats-officedocument"))
+            {
+                article=new Article();
+                article.setText(LocalDateTime.now().format(formatter) + ": Error: ungültiges Dateiformat!");
+                textArea.add(article);
+            }
+            textArea.setText(LocalDateTime.now().format(formatter) + ": Info: Verarbeite Datei: " + fileName + " (" + contentLength + " Byte)");
+
+            XSSFWorkbook my_xls_workbook = new XSSFWorkbook(fileData);
+
+            XSSFSheet sheet1 = my_xls_workbook.getSheet("Comments Financials");
+            listOfFinancials = parseSheet(sheet1, Financials.class);
+
+            XSSFSheet sheet2 = my_xls_workbook.getSheet("Comments Subscriber");
+            listOfSubscriber = parseSheet(sheet2, Subscriber.class);
+
+            XSSFSheet sheet3 = my_xls_workbook.getSheet("Comments Units Deep Dive");
+            listOfUnitsDeepDive = parseSheet(sheet3, UnitsDeepDive.class);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void setupFinancialsGrid() {
 
         String ZEILE = "row";
 
@@ -215,39 +286,84 @@ public class InputPBIComments extends VerticalLayout {
             System.out.println("Zeile: " + e.getItem().getRow());
         });
 
-
     }
 
-    public <T> List<T>  parseExcelFile(InputStream fileData, String fileName, String sheetName, Class<T> targetType) {
+    private void setupSubscriberGrid() {
 
+        String ZEILE = "row";
 
-        List<T> resultList = new ArrayList<>();
+        String MONTH = "month";
+
+        String COMMENT = "comment";
+
+        String CATEGORY = "category";
+
+        String PAYMENTTYPE = "paymentType";
+
+        String SEGMENT = "segment";
+
+        String EDIT_COLUMN = "vaadin-crud-edit-column";
+
+        gridSubscriber = crudSubscriber.getGrid();
+
+        gridSubscriber.getColumnByKey("row").setHeader("Zeile").setWidth("10px");
+
+        // Reorder the columns (alphabetical by default)
+        gridSubscriber.setColumnOrder( gridSubscriber.getColumnByKey(ZEILE)
+                , gridSubscriber.getColumnByKey(MONTH)
+                , gridSubscriber.getColumnByKey(COMMENT)
+                , gridSubscriber.getColumnByKey(CATEGORY)
+                , gridSubscriber.getColumnByKey(PAYMENTTYPE)
+                , gridSubscriber.getColumnByKey(SEGMENT)
+                , gridSubscriber.getColumnByKey(EDIT_COLUMN));
+
+        gridSubscriber.addItemDoubleClickListener(e->{
+            System.out.println("Zeile: " + e.getItem().getRow());
+        });
+    }
+
+    private void setupUnitsDeepDiveGrid() {
+
+        String ZEILE = "row";
+
+        String MONTH = "month";
+
+        String COMMENT = "comment";
+
+        String CATEGORY = "category";
+
+        String SEGMENT = "segment";
+
+        String EDIT_COLUMN = "vaadin-crud-edit-column";
+
+        gridUnitsDeepDive = crudUnitsDeepDive.getGrid();
+
+        gridUnitsDeepDive.getColumnByKey("row").setHeader("Zeile").setWidth("10px");
+
+        // Reorder the columns (alphabetical by default)
+        gridUnitsDeepDive.setColumnOrder( gridUnitsDeepDive.getColumnByKey(ZEILE)
+                , gridUnitsDeepDive.getColumnByKey(MONTH)
+                , gridUnitsDeepDive.getColumnByKey(COMMENT)
+                , gridUnitsDeepDive.getColumnByKey(CATEGORY)
+                , gridUnitsDeepDive.getColumnByKey(SEGMENT)
+                , gridUnitsDeepDive.getColumnByKey(EDIT_COLUMN));
+
+        gridSubscriber.addItemDoubleClickListener(e->{
+            System.out.println("Zeile: " + e.getItem().getRow());
+        });
+    }
+
+    public <T> List<T>  parseSheet(XSSFSheet my_worksheet, Class<T> targetType) {
+
         try {
-            if(fileName.isEmpty() || fileName.length()==0)
-            {
-                article=new Article();
-                article.setText(LocalDateTime.now().format(formatter) + ": Error: Keine Datei angegeben!");
-                textArea.add(article);
-            }
-
-            if(!mimeType.contains("openxmlformats-officedocument"))
-            {
-                article=new Article();
-                article.setText(LocalDateTime.now().format(formatter) + ": Error: ungültiges Dateiformat!");
-                textArea.add(article);
-            }
-            System.out.println(sheetName+"...........");
-            //System.out.println("Excel import: "+  fileName + " => Mime-Type: " + mimeType  + " Größe " + contentLength + " Byte");
-            textArea.setText(LocalDateTime.now().format(formatter) + ": Info: Verarbeite Datei: " + fileName + " (" + contentLength + " Byte)");
-
-            XSSFWorkbook my_xls_workbook = new XSSFWorkbook(fileData);
-            XSSFSheet my_worksheet = my_xls_workbook.getSheet(sheetName);
+            List<T> resultList = new ArrayList<>();
             Iterator<Row> rowIterator = my_worksheet.iterator();
 
             int RowNumber=0;
             Integer Error_count=0;
+            System.out.println(my_worksheet.getPhysicalNumberOfRows()+"$$$$$$$$$");
 
-            while (rowIterator.hasNext()) {
+            while (rowIterator.hasNext() ) {
                 Row row = rowIterator.next();
                 T entity = targetType.newInstance();
                 RowNumber++;
@@ -255,22 +371,23 @@ public class InputPBIComments extends VerticalLayout {
                 if (RowNumber == 1) {
                     continue;
                 }
+                if(row.getCell(0).toString().isEmpty()) {
+                    break;
+                }
 
-               // System.out.println(row.getLastCellNum()+" ___________________________"+row.toString());
                 Field[] fields = targetType.getDeclaredFields();
                 for (int index = 0; index < (fields.length -1); index++) {
-
-                    Field field = fields[index];
-                    if( index == 0) {
-                        field.set(entity, RowNumber);
-                    }
-
-                    field = fields[index+1];
-                    field.setAccessible(true);
                     Cell cell = row.getCell(index);
-                  //  System.out.println(cell + " ......."+field.getType() + "---"+field.getName());
 
-                    if (cell != null) {
+                    if (cell != null && !cell.toString().isEmpty()) {
+                        Field field = fields[index];
+                        if( index == 0) {
+                            field.set(entity, RowNumber);
+                        }
+
+                        field = fields[index+1];
+                        field.setAccessible(true);
+
                         if (field.getType() == int.class || field.getType() == Integer.class) {
                             field.set(entity, (int) cell.getNumericCellValue());
                         } else if (field.getType() == double.class || field.getType() == Double.class) {
@@ -280,10 +397,8 @@ public class InputPBIComments extends VerticalLayout {
                         }
                     }
                 }
-
                 resultList.add(entity);
             }
-            System.out.println(resultList.get(0).toString()+"list...."+resultList.size());
             return resultList;
         } catch (Exception e) {
             e.printStackTrace();
@@ -292,402 +407,65 @@ public class InputPBIComments extends VerticalLayout {
 
     }
 
-    public List<Financials> parseExcelFile_Financials(InputStream fileData, String fileName, String sheetName) {
-
-
-        List<Financials> listOfFinancials = new ArrayList<>();
-        try {
-            if(fileName.isEmpty() || fileName.length()==0)
-            {
-                article=new Article();
-                article.setText(LocalDateTime.now().format(formatter) + ": Error: Keine Datei angegeben!");
-                textArea.add(article);
-            }
-
-            if(!mimeType.contains("openxmlformats-officedocument"))
-            {
-                article=new Article();
-                article.setText(LocalDateTime.now().format(formatter) + ": Error: ungültiges Dateiformat!");
-                textArea.add(article);
-            }
-
-            System.out.println("Excel import: "+  fileName + " => Mime-Type: " + mimeType  + " Größe " + contentLength + " Byte");
-            textArea.setText(LocalDateTime.now().format(formatter) + ": Info: Verarbeite Datei: " + fileName + " (" + contentLength + " Byte)");
-            //message.setText(LocalDateTime.now().format(formatter) + ": Info: reading file: " + fileName);
-
-            //addRowsBT.setEnabled(false);
-            //replaceRowsBT.setEnabled(false);
-            //spinner.setVisible(true);
-
-            //  HSSFWorkbook my_xls_workbook = new HSSFWorkbook(fileData);
-            XSSFWorkbook my_xls_workbook = new XSSFWorkbook(fileData);
-            //   HSSFSheet my_worksheet = my_xls_workbook.getSheetAt(0);
-            XSSFSheet my_worksheet = my_xls_workbook.getSheet(sheetName);
-            Iterator<Row> rowIterator = my_worksheet.iterator();
-
-            Integer RowNumber=0;
-            Integer Error_count=0;
-
-            while(rowIterator.hasNext() )
-            {
-                Financials financials = new Financials();
-                Row row = rowIterator.next();
-                RowNumber++;
-
-                //if (RowNumber>200){ break; }
-
-
-
-                Iterator<Cell> cellIterator = row.cellIterator();
-                while(cellIterator.hasNext()) {
-
-                    if(RowNumber==1 ) //Überschrift nicht betrachten
-                    {
-                        break;
-                    }
-
-
-                    Cell cell = cellIterator.next();
-                    financials.setRow(RowNumber);
-
-                    if(cell.getColumnIndex()==0)
-                    {
-                        String ColumnName="Month";
-                        try {
-                            financials.setMonth(checkCellNumeric(sheetName, cell, RowNumber,ColumnName));
-                        }
-                        catch(Exception e)
-                        {
-                            article=new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
-                            textArea.add(article);
-                            Error_count++;
-
-                        }
-                    }
-
-                    if(cell.getColumnIndex()==1)
-                    {
-                        String ColumnName="Category";
-                        try {
-                            financials.setCategory(checkCellString(sheetName, cell, RowNumber,ColumnName));
-                        }
-                        catch(Exception e)
-                        {
-                            article=new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
-                            textArea.add(article);
-                            Error_count++;
-
-                        }
-                    }
-
-                    if(cell.getColumnIndex()==2)
-                    {
-                        String ColumnName="Date";
-                        try {
-                            financials.setComment(checkCellString(sheetName, cell, RowNumber,ColumnName));
-                        }
-                        catch(Exception e)
-                        {
-                            article=new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
-                            textArea.add(article);
-                            Error_count++;
-
-                        }
-                    }
-
-                    if(cell.getColumnIndex()==3)
-                    {
-                        String ColumnName="Scenario";
-                        try {
-                            financials.setScenario(checkCellString(sheetName, cell, RowNumber,ColumnName));
-                        }
-                        catch(Exception e)
-                        {
-                            article=new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
-                            textArea.add(article);
-                            Error_count++;
-
-                        }
-                    }
-
-                    if(cell.getColumnIndex()==4)
-                    {
-                        String ColumnName="XTD";
-                        try {
-                            financials.setXtd(checkCellString(sheetName, cell, RowNumber,ColumnName));
-                        }
-                        catch(Exception e)
-                        {
-                            article=new Article();
-                            article.setText(LocalDateTime.now().format(formatter) + " " + sheetName + ": Error: Zeile " + RowNumber.toString() + ", Spalte " + ColumnName + ": " + e.getMessage());
-                            textArea.add(article);
-                            Error_count++;
-
-                        }
-                    }
-
-                }
-
-                if(RowNumber != 1) {
-                    listOfFinancials.add(financials);
-                    System.out.println(listOfFinancials.size()+".............parse");
-                }
-
-
-            }
-
-            article=new Article();
-            article.getStyle().set("white-space","pre-line");
-            article.add("\n");
-            article.add(LocalDateTime.now().format(formatter) + " " + sheetName + ": Count Rows: " + listOfFinancials.size() + " Count Errrors: " + Error_count);
-            article.add("\n");
-            textArea.add(article);
-
-
-            System.out.println("Anzahl Zeilen im Excel: " + listOfFinancials.size());
-
-
-            return listOfFinancials;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-
-    }
-
-    private Double checkCellDouble(String sheetName, Cell cell, Integer zeile, String spalte) {
-
-        try {
-
-            switch (cell.getCellType()){
-                case Cell.CELL_TYPE_NUMERIC:
-                    return  (double) cell.getNumericCellValue();
-                case Cell.CELL_TYPE_STRING:
-                    return 0.0;
-                case Cell.CELL_TYPE_FORMULA:
-                    return 0.0;
-                case Cell.CELL_TYPE_BLANK:
-                    return 0.0;
-                case Cell.CELL_TYPE_BOOLEAN:
-                    return 0.0;
-                case Cell.CELL_TYPE_ERROR:
-                    return 0.0;
-
-            }
-            article.add("\n" + sheetName + " Zeile " + zeile.toString() + ", column >" + spalte + "< konnte in checkCellDouble nicht aufgelöst werden. Typ=" + cell.getCellType());
-            textArea.add(article);
-
-        }
-        catch(Exception e){
-            switch (e.getMessage()) {
-                case "Cannot get a text value from a error formula cell":
-
-                    article = new Article();
-                    article.setText("\n" + sheetName + ": Info: row >" + zeile.toString() + "<, column " + spalte + ": formula cell error => replaced to 0");
-                    textArea.add(article);
-
-                    return  0.0;
-
-            }
-            System.out.println("Zeile " + zeile.toString() + ", Spalte " + spalte + " konnte in checkCellDouble nicht aufgelöst werden. Typ=" + cell.getCellType() + e.getMessage());
-        }
-
-
-        return  0.0;
-
-
-
-        /*
-
-
-        if (cell.getCellType()!=Cell.CELL_TYPE_NUMERIC)
-        {
-            System.out.println("Zeile " + zeile.toString() + ", Spalte " + spalte + " konnte nicht gelesen werden, da ExcelTyp nicht numerisch!");
-            //     textArea.setValue(textArea.getValue() + "\n" + LocalDateTime.now().format(formatter) + ": Error: Zeile " + zeile.toString() + ", Spalte " + spalte + " konnte nicht gelesen werden, da ExcelTyp nicht Numeric!");
-            article.add("\nZeile " + zeile.toString() + ", Spalte " + spalte + "  konnte nicht gelesen werden, da ExcelTyp nicht Numeric!");
-            textArea.add(article);
-            return 0.0;
-        }
-        else
-        {
-            //System.out.println("Spalte: " + spalte + " Zeile: " + zeile.toString() + " Wert: " + cell.getNumericCellValue());
-            return  (double) cell.getNumericCellValue();
-        }
-
-         */
-
-    }
-
-    private String checkCellString(String sheetName, Cell cell, Integer zeile, String spalte) {
-
-        try {
-
-            switch (cell.getCellType()){
-                case Cell.CELL_TYPE_NUMERIC:
-                    return cell.getStringCellValue();
-                case Cell.CELL_TYPE_STRING:
-                    return cell.getStringCellValue();
-                case Cell.CELL_TYPE_FORMULA:
-                    return cell.getStringCellValue();
-                case Cell.CELL_TYPE_BLANK:
-                    return  "";
-                case Cell.CELL_TYPE_BOOLEAN:
-                    return cell.getStringCellValue();
-                case Cell.CELL_TYPE_ERROR:
-                    return  "";
-
-            }
-            article.add("\n" + sheetName + " Zeile " + zeile.toString() + ", column >" + spalte + "< konnte in checkCellString nicht aufgelöst werden. Typ=" + cell.getCellType());
-            textArea.add(article);
-
-        }
-        catch(Exception e){
-            switch (e.getMessage()) {
-                case "Cannot get a text value from a error formula cell":
-
-                    article = new Article();
-                    article.setText("\n" + sheetName + ": Info: row >" + zeile.toString() + "<, column " + spalte + ": formula cell error => replaced to empty cell");
-                    textArea.add(article);
-
-                    return "";
-
-            }
-            System.out.println("Zeile " + zeile.toString() + ", Spalte " + spalte + " konnte in checkCellString nicht aufgelöst werden. Typ=" + cell.getCellType() + e.getMessage());
-        }
-
-
-        return  "######";
-
-    }
-
-    private Date checkCellDate(String sheetName, Cell cell, Integer zeile, String spalte) {
-        Date date=null;
-        try{
-
-
-            switch (cell.getCellType()) {
-                case Cell.CELL_TYPE_NUMERIC:
-                    if (cell.getNumericCellValue() != 0) {
-                        //Get date
-                        date = (Date) cell.getDateCellValue();
-
-
-
-                        //Get datetime
-                        cell.getDateCellValue();
-
-
-                        System.out.println(date.getTime());
-                    }
-                    break;
-            }
-
-
-            return date;
-
-         /*   if (cell.getCellType()!=Cell.CELL_TYPE_STRING && !cell.getStringCellValue().isEmpty())
-            {
-                System.out.println("Zeile " + zeile.toString() + ", Spalte " + spalte + " konnte nicht gelesen werden, da ExcelTyp Numeric!");
-                //detailsText.setValue(detailsText.getValue() + "\nZeile " + zeile.toString() + ", Spalte " + spalte + "  konnte nicht gelesen werden, da ExcelTyp Numeric!");
-
-                article.add("\nZeile " + zeile.toString() + ", Spalte " + spalte + "  konnte nicht gelesen werden, da ExcelTyp Numeric!");
-                textArea.add(article);
-
-                return "";
-            }
-            else
-            {
-                if (cell.getStringCellValue().isEmpty())
-                {
-                    //System.out.println("Info: Zeile " + zeile.toString() + ", Spalte " + spalte + " ist leer");
-                    //detailsText.setValue(detailsText.getValue() + "\nZeile " + zeile.toString() + ", Spalte " + spalte + " ist leer");
-                    article.add("\nZeile " + zeile.toString() + ", Spalte " + spalte + " ist leer");
-                    textArea.add(article);
-                }
-                return  cell.getStringCellValue();
-
-            }*/
-        }
-        catch(Exception e) {
-            System.out.println("Exception" + e.getMessage());
-            //detailsText.setValue(detailsText.getValue() + "\nZeile " + zeile.toString() + ", Spalte " + spalte + "  konnte nicht gelesen werden, da ExcelTyp Numeric!");
-            article.add("\nZeile " + zeile.toString() + ", Spalte " + spalte + "  konnte nicht gelesen werden, da ExcelTyp Numeric!");
-            textArea.add(article);
-            return null;
-        }
-    }
-
-    private Integer checkCellNumeric(String sheetName, Cell cell, Integer zeile, String spalte) {
-
-
-        switch (cell.getCellType()){
-            case Cell.CELL_TYPE_NUMERIC:
-                return  (int) cell.getNumericCellValue();
-            case Cell.CELL_TYPE_STRING:
-                return 0;
-            case Cell.CELL_TYPE_FORMULA:
-                return 0;
-            case Cell.CELL_TYPE_BLANK:
-                return 0;
-            case Cell.CELL_TYPE_BOOLEAN:
-                return 0;
-            case Cell.CELL_TYPE_ERROR:
-                return 0;
-
-        }
-
-        return 0;
-
-
-/*
-        if (cell.getCellType()!=Cell.CELL_TYPE_NUMERIC)
-        {
-            var CellType =cell.getCellType();
-
-            System.out.println("Zeile " + zeile.toString() + ", Spalte " + spalte + " konnte nicht gelesen werden, da ExcelTyp nicht numerisch, sonder hat Typ: " + CellType );
-            //     textArea.setValue(textArea.getValue() + "\n" + LocalDateTime.now().format(formatter) + ": Error: Zeile " + zeile.toString() + ", Spalte " + spalte + " konnte nicht gelesen werden, da ExcelTyp nicht Numeric!");
-            article.add("\nZeile " + zeile.toString() + ", Spalte " + spalte + "  konnte nicht gelesen werden, da ExcelTyp nicht Numeric!");
-            textArea.add(article);
-            return 0;
-        }
-        else
-        {
-            //System.out.println("Spalte: " + spalte + " Zeile: " + zeile.toString() + " Wert: " + cell.getNumericCellValue());
-            return  (int) cell.getNumericCellValue();
-        }
-
- */
-
-    }
-
     private void setupDataProviderEvent() {
-    //    FinancialsDataProvider dataProvider = new FinancialsDataProvider(getDataProviderAllItems());
-        GenericDataProvider dataProvider = new GenericDataProvider(getDataProviderAllItems());
+        GenericDataProvider  financialsdataProvider = new GenericDataProvider(getFinancialsDataProviderAllItems());
+        GenericDataProvider  subscriberdataProvider = new GenericDataProvider(getSubscriberDataProviderAllItems());
+        GenericDataProvider  unitsDeepDivedataProvider = new GenericDataProvider(getUnitsDeepDiveDataProviderAllItems());
 
         article=new Article();
         article.setText(LocalDateTime.now().format(formatter) + ": Info: Download from Database");
         textArea.add(article);
 
         crudFinancials.addDeleteListener(
-                deleteEvent -> {dataProvider.delete(deleteEvent.getItem());
-                    crudFinancials.setDataProvider(dataProvider);
+                deleteEvent -> {financialsdataProvider.delete(deleteEvent.getItem());
+                    crudFinancials.setDataProvider(financialsdataProvider);
 
                 });
         crudFinancials.addSaveListener(
                 saveEvent -> {
-                    dataProvider.persist(saveEvent.getItem());
-                    crudFinancials.setDataProvider(dataProvider);
+                    financialsdataProvider.persist(saveEvent.getItem());
+                    crudFinancials.setDataProvider(financialsdataProvider);
+                });
+
+        crudSubscriber.addDeleteListener(
+                deleteEvent -> {subscriberdataProvider.delete(deleteEvent.getItem());
+                    crudSubscriber.setDataProvider(subscriberdataProvider);
+
+                });
+        crudSubscriber.addSaveListener(
+                saveEvent -> {
+                    subscriberdataProvider.persist(saveEvent.getItem());
+                    crudSubscriber.setDataProvider(subscriberdataProvider);
+                });
+
+        crudUnitsDeepDive.addDeleteListener(
+                deleteEvent -> {unitsDeepDivedataProvider.delete(deleteEvent.getItem());
+                    crudUnitsDeepDive.setDataProvider(unitsDeepDivedataProvider);
+
+                });
+        crudUnitsDeepDive.addSaveListener(
+                saveEvent -> {
+                    unitsDeepDivedataProvider.persist(saveEvent.getItem());
+                    crudUnitsDeepDive.setDataProvider(unitsDeepDivedataProvider);
                 });
     }
 
-    private List<Financials> getDataProviderAllItems() {
+    private List<Financials> getFinancialsDataProviderAllItems() {
         DataProvider<Financials, Void> existDataProvider = (DataProvider<Financials, Void>) gridFinancials.getDataProvider();
         List<Financials> listOfFinancials = existDataProvider.fetch(new Query<>()).collect(Collectors.toList());
         return listOfFinancials;
+    }
+
+    private List<Subscriber> getSubscriberDataProviderAllItems() {
+        DataProvider<Subscriber, Void> existDataProvider = (DataProvider<Subscriber, Void>) gridSubscriber.getDataProvider();
+        List<Subscriber> listOfSubscriber = existDataProvider.fetch(new Query<>()).collect(Collectors.toList());
+        return listOfSubscriber;
+    }
+
+    private List<UnitsDeepDive> getUnitsDeepDiveDataProviderAllItems() {
+        DataProvider<UnitsDeepDive, Void> existDataProvider = (DataProvider<UnitsDeepDive, Void>) gridUnitsDeepDive.getDataProvider();
+        List<UnitsDeepDive>  listOfUnitsDeepDive = existDataProvider.fetch(new Query<>()).collect(Collectors.toList());
+        return listOfUnitsDeepDive;
     }
 
 
