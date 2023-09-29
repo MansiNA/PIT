@@ -359,6 +359,7 @@ public class InputPBIComments extends VerticalLayout {
             List<T> resultList = new ArrayList<>();
             Iterator<Row> rowIterator = my_worksheet.iterator();
 
+
             int RowNumber=0;
             Integer Error_count=0;
             System.out.println(my_worksheet.getPhysicalNumberOfRows()+"$$$$$$$$$");
@@ -802,120 +803,5 @@ public class InputPBIComments extends VerticalLayout {
                 throw new RuntimeException(ex);
             }
         }
-
     }
-
-
-
-    public class FinancialsDataProvider  extends AbstractBackEndDataProvider<Financials, CrudFilter> {
-        final List<Financials> DATABASE;
-
-        private Consumer<Long> sizeChangeListener;
-        public FinancialsDataProvider(List<Financials> listOfFinancials) {
-            this.DATABASE = listOfFinancials;
-        }
-        @Override
-        protected Stream<Financials> fetchFromBackEnd(Query<Financials, CrudFilter> query) {
-            int offset = query.getOffset();
-            int limit = query.getLimit();
-
-            Stream<Financials> stream = DATABASE.stream();
-
-            if (query.getFilter().isPresent()) {
-                stream = stream.filter(predicate(query.getFilter().get()))
-                        .sorted(comparator(query.getFilter().get()));
-            }
-
-            return stream.skip(offset).limit(limit);
-        }
-
-        private static Predicate<Financials> predicate(CrudFilter filter) {
-            // For RDBMS just generate a WHERE clause
-            return filter.getConstraints().entrySet().stream()
-                    .map(constraint -> (Predicate<Financials>) financials -> {
-                        try {
-                            Object value = valueOf(constraint.getKey(), financials);
-                            return value != null && value.toString().toLowerCase()
-                                    .contains(constraint.getValue().toLowerCase());
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            return false;
-                        }
-                    }).reduce(Predicate::and).orElse(e -> true);
-        }
-
-        private static Object valueOf(String fieldName, Financials financials) {
-            try {
-                Field field = Financials.class.getDeclaredField(fieldName);
-                field.setAccessible(true);
-                return field.get(financials);
-            } catch (Exception ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-
-        private static Comparator<Financials> comparator(CrudFilter filter) {
-            // For RDBMS just generate an ORDER BY clause
-            return filter.getSortOrders().entrySet().stream().map(sortClause -> {
-                try {
-                    Comparator<Financials> comparator = Comparator.comparing(
-                            person -> (Comparable) valueOf(sortClause.getKey(),
-                                    person));
-
-                    if (sortClause.getValue() == SortDirection.DESCENDING) {
-                        comparator = comparator.reversed();
-                    }
-
-                    return comparator;
-
-                } catch (Exception ex) {
-                    return (Comparator<Financials>) (o1, o2) -> 0;
-                }
-            }).reduce(Comparator::thenComparing).orElse((o1, o2) -> 0);
-        }
-
-
-        @Override
-        protected int sizeInBackEnd(Query<Financials, CrudFilter> query) {
-            // For RDBMS just execute a SELECT COUNT(*) ... WHERE query
-            long count = fetchFromBackEnd(query).count();
-
-            if (sizeChangeListener != null) {
-                sizeChangeListener.accept(count);
-            }
-
-            return (int) count;
-        }
-
-        public void persist(Financials item) {
-
-            if (item.getRow() == null) {
-                item.setRow(DATABASE.stream().map(Financials::getRow).max(naturalOrder())
-                        .orElse(0) + 1);
-            }
-
-            final Optional<Financials> existingItem = find(item.getRow());
-            if (existingItem.isPresent()) {
-                int position = DATABASE.indexOf(existingItem.get());
-                DATABASE.remove(existingItem.get());
-                DATABASE.add(position, item);
-            } else {
-                DATABASE.add(item);
-            }
-        }
-
-        Optional<Financials> find(Integer id) {
-            return DATABASE.stream().filter(entity -> entity.getRow().equals(id))
-                    .findFirst();
-        }
-
-        public void delete(Financials item) {
-            DATABASE.removeIf(entity -> entity.getRow().equals(item.getRow()));
-        }
-
-    }
-
-
-
-
 }
